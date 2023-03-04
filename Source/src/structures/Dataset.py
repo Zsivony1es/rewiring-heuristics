@@ -14,7 +14,7 @@ class Dataset(PyGDataset):
         pass
 
     def download(self):
-        pass
+        print("Called download()...")
 
     def process(self):
         pass
