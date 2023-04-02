@@ -1,4 +1,4 @@
-import structures.MyDataset
+from rewiring.structures import MyDataset
 
 def main():
     ds = MyDataset()
