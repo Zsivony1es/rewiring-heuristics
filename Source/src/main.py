@@ -1,7 +1,7 @@
-import structures.Dataset
+import structures.MyDataset
 
 def main():
-    ds = Dataset()
+    ds = MyDataset()
 
 
 if __name__ == '__main__':

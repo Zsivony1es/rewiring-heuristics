@@ -1,7 +1,7 @@
 import torch
-from torch_geometric.data import Dataset as PyGDataset
+from torch_geometric.data import Dataset as Dataset
 
-class Dataset(PyGDataset):
+class MyDataset(Dataset):
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
         super().__init__(root, transform, pre_transform, pre_filter)
 
