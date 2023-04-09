@@ -6,7 +6,8 @@ from torch_geometric import datasets
 # Load datasets
 datasets = [
     datasets.Planetoid(root='Source/res/cora', name='Cora'),
-    datasets.Planetoid(root='Source/res/reddit', name='CiteSeer')
+    datasets.Planetoid(root='Source/res/reddit', name='CiteSeer'),
+    datasets.AmazonProducts(root='Source/res/amazonprods')
 ]
 
 models = list(map(lambda dset: GAT(dset.num_features, 256, dset.num_classes), datasets))

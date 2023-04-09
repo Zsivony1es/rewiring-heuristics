@@ -2,4 +2,5 @@
 /Model/*.bak_*
 /Source/res/cora
 /Source/res/reddit
+/Source/res/amazonprods
 **/__pycache__
