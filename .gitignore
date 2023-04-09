@@ -1,2 +1,4 @@
 /Model/*.lck
 /Model/*.bak_*
+/data
+**/__pycache__
