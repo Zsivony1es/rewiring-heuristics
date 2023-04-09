@@ -1,4 +1,5 @@
 /Model/*.lck
 /Model/*.bak_*
-/data
+/Source/res/cora
+/Source/res/reddit
 **/__pycache__

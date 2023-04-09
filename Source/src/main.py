@@ -1,32 +1,36 @@
 import torch
-from rewiring.model import GAT
-from torch_geometric.datasets import Planetoid
+from rewiring.model.GAT import GAT
+from torch_geometric import datasets
 
 
-# Load the Cora dataset
-dataset = Planetoid(root='data/Cora', name='Cora')
+# Load datasets
+datasets = [
+    datasets.Planetoid(root='Source/res/cora', name='Cora'),
+    datasets.Planetoid(root='Source/res/reddit', name='CiteSeer')
+]
 
-# Initialize the model
-model = GAT(dataset.num_features, 256, dataset.num_classes)
-
-# Define the optimizer
-optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=5e-4)
+models = list(map(lambda dset: GAT(dset.num_features, 256, dset.num_classes), datasets))
+optimizers = list(map(lambda model: torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=5e-4), models))
 
 # Define the loss function
 criterion = torch.nn.NLLLoss()
 
-# Train the model
-model.train()
-for epoch in range(200):
-    optimizer.zero_grad()
-    out = model(dataset.x, dataset.edge_index)
-    loss = criterion(out[dataset.train_mask], dataset.y[dataset.train_mask])
-    loss.backward()
-    optimizer.step()
+# Train the models
+for i in range(len(datasets)):
 
-# Evaluate the model
-model.eval()
-_, pred = model(dataset.x, dataset.edge_index).max(dim=1)
-correct = float(pred[dataset.test_mask].eq(dataset.y[dataset.test_mask]).sum().item())
-acc = correct / dataset.test_mask.sum().item()
-print('Accuracy: {:.4f}'.format(acc))
+    models[i].train()
+    for epoch in range(200):
+        print(f"Running epoch {epoch}/200")
+        optimizers[i].zero_grad()
+        out = models[i](datasets[i].x, datasets[i].edge_index)
+        loss = criterion(out[datasets[i].train_mask], datasets[i].y[datasets[i].train_mask])
+        loss.backward()
+        optimizers[i].step()
+    # Evaluate model
+    models[i].eval()
+
+    _, pred = models[i](datasets[i].x, datasets[i].edge_index).max(dim=1)
+    correct = float(pred[datasets[i].test_mask].eq(datasets[i].y[datasets[i].test_mask]).sum().item())
+    acc = correct / datasets[i].test_mask.sum().item()
+
+    print(f'Accuracy ({datasets[i].name}): {acc}')
