@@ -1,13 +1,18 @@
 import torch
 from rewiring.structures.GAT import GAT
+from rewiring.transform.AddRandomEdge import AddRandomEdge
 from torch_geometric import datasets
 
+# Define transformation (AKA rewiring)
+
+rewiring = AddRandomEdge()
 
 # Load datasets
 datasets = [
-    datasets.Planetoid(root='Source/res/cora', name='Cora'),
-    datasets.Planetoid(root='Source/res/reddit', name='CiteSeer'),
-    datasets.AmazonProducts(root='Source/res/amazonprods')
+    datasets.Planetoid(root='Source/res/cora', name='Cora', transform=rewiring),
+    # datasets.AmazonProducts(root='Source/res/amazonprods', transform=rewiring),
+    datasets.Planetoid(root='Source/res/reddit', name='CiteSeer', transform=rewiring),
+    datasets.PPI(root='Source/res/ppi', transform=rewiring)
 ]
 
 models = list(map(lambda dset: GAT(dset.num_features, 256, dset.num_classes), datasets))
