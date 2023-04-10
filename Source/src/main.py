@@ -1,5 +1,5 @@
 import torch
-from rewiring.model.GAT import GAT
+from rewiring.structures.GAT import GAT
 from torch_geometric import datasets
 
 
