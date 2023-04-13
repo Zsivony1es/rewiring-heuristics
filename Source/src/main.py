@@ -36,7 +36,6 @@ for i in range(len(datasets)):
         optimizers[i].step()
     # Evaluate model
     models[i].eval()
-
     _, pred = models[i](datasets[i].x, datasets[i].edge_index).max(dim=1)
     correct = float(pred[datasets[i].test_mask].eq(datasets[i].y[datasets[i].test_mask]).sum().item())
     acc = correct / datasets[i].test_mask.sum().item()
