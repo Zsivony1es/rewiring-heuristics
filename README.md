@@ -1,6 +1,6 @@
 # Rewiring Heuristics
 
-### A framework to create GNN datasets, plus test and evaluate different rewiring heuristics on them
+### A framework, which can use different rewiring heuristics to improve GNN models and evaluates their efficiency
 
 #### About
 This project was created for my (Peter Ivony) bachelor thesis at the University of Vienna, written between March 1st and June 30th. 
