@@ -1,9 +1,9 @@
 from torch_geometric.data.data import Data, HeteroData
 from torch_geometric.transforms import BaseTransform
 
-class ReduceLongestShortestPath(BaseTransform):
+class ReduceDiameter(BaseTransform):
     r"""Graph rewiring heuristic, that adds an edge between the two nodes, 
-    which are the furthest away from each other."""
+    which have the longest shortest path between each other in the graph."""
 
     def __init__(self) -> None:
         super().__init__()

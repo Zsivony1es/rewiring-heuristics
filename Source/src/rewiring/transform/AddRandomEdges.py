@@ -1,4 +1,4 @@
-from  import Data, HeteroData
+from torch_geometric.data import Data, HeteroData
 from torch_geometric.transforms import BaseTransform
 import random
 
@@ -28,8 +28,7 @@ class AddRandomEdges(BaseTransform):
             while True:
                 node1, node2 = random.randrange(data.num_nodes), random.randrange(data.num_nodes)
                 if node1 != node2:
-                    
-                    
+                   pass     
         else:
             pass
 
