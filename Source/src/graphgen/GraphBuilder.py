@@ -6,25 +6,25 @@ from typing import Optional
 class GraphBuilder:
     """Used to generate a graph instance of :obj:`torch_geometric.data.Data`"""
 
-    def generate_graph_from_json(json_path: str) -> Data:
-        """Create a graph based on the contents of the JSON file"""
-        json.load(open(json_path,'r'))
-        pass
-
     def __init__(self, json_conf: Optional[str] = None) -> None:
         if (json_conf is not None):
             self._get_values_from_json(json_conf=json_conf)
         else:
             self._set_null_attributes()
-        
+
+    def generate_graph_from_json(self, json_path: str) -> Data:
+        """Create a graph based on the contents of the JSON file"""
+        json.load(open(json_path,'r'))
+        pass
+
+    def generate_random_graph(self) -> Data:
+        return
+
     def _set_null_attributes(self) -> None:
         self._x = None
         self._edge_index = None
         self._edge_attr = None
         self._y = None
-
-
-    
 
     def generate_edges(self, edge_count: int, feature_count: int) -> None:
         """Generates the graph connectivity matrix in COO format."""
