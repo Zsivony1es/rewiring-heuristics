@@ -1,6 +1,6 @@
 /Model/*.lck
 /Model/*.bak_*
-/Source/res/cora
-/Source/res/reddit
-/Source/res/amazonprods
+/Source/res/*
+!/Source/res/dset1
+!/Source/res/dset2
 **/__pycache__

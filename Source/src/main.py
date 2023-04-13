@@ -8,11 +8,13 @@ from torch_geometric import datasets
 rewiring = AddRandomEdge()
 
 # Load datasets
+dset_base = "Source/res"
 datasets = [
-    datasets.Planetoid(root='Source/res/cora', name='Cora', transform=rewiring),
-    # datasets.AmazonProducts(root='Source/res/amazonprods', transform=rewiring),
-    datasets.Planetoid(root='Source/res/reddit', name='CiteSeer', transform=rewiring),
-    datasets.PPI(root='Source/res/ppi', transform=rewiring)
+    datasets.Planetoid(root=f'{dset_base}/cora', name='Cora', transform=rewiring),
+    # datasets.AmazonProducts(root=f'{dset_base}/amazonprods', transform=rewiring),
+    # datasets.PPI(root=f'{dset_base}/ppi', transform=rewiring),
+    datasets.Planetoid(root=f'{dset_base}/reddit', name='CiteSeer', transform=rewiring),
+    datasets.TUDataset(root=f'{dset_base}/enzymes', name='ENZYMES',)
 ]
 
 models = list(map(lambda dset: GAT(dset.num_features, 256, dset.num_classes), datasets))
