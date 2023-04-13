@@ -4,7 +4,7 @@ from torch_geometric.data import Data
 from typing import Optional
 
 class GraphBuilder:
-    """Used to generate a graph instance of `torch_geometric.data.Data`"""
+    """Used to generate a graph instance of :obj:`torch_geometric.data.Data`"""
 
     def generate_graph_from_json(json_path: str) -> Data:
         """Create a graph based on the contents of the JSON file"""
