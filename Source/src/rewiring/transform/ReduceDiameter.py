@@ -5,6 +5,8 @@ class ReduceDiameter(BaseTransform):
     r"""Graph rewiring heuristic, that adds an edge between the two nodes, 
     which have the longest shortest path between each other in the graph."""
 
+    # input: maximum diameter or percentage of edges added
+
     def __init__(self) -> None:
         super().__init__()
         pass
