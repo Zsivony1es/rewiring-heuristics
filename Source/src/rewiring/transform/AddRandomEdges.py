@@ -32,11 +32,18 @@ class AddRandomEdges(BaseTransform):
         
         if (free_edge_spot_count / complete_graph_edge_count) > self._rand_threshold:
             
-            while True:
-                node1, node2 = node_indices[np.random.choice(node_indices.shape[0], size=2, replace=self._allow_self_loops)]
-                if node1 != node2:
-                    print()
+            for _ in range(self._num_edges_add):
+                while True:
+                    # Get two node indices at random
+                    edge = node_indices[np.random.choice(node_indices.shape[0], size=2, replace=self._allow_self_loops)]
+                    # If the edge is not contained in the graph, we can break the loop and add it
+                    if not torch.eq(edge, data.edge_index).all(1).any().item():
+                        break
+                # Add edge to graph
+                data.edge_index = torch.cat((data.edge_index, edge.unsqueeze(0)), dim=0)
+                
         else:
+
             # Get edge set of complete graph
             all_possible_edges = torch.cartesian_prod(node_indices, node_indices)
 
