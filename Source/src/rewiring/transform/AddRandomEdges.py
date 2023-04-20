@@ -3,20 +3,42 @@ from torch_geometric.transforms import BaseTransform
 import random
 import numpy as np
 import torch
+from math import floor
 
 class AddRandomEdges(BaseTransform):
     """Adds edges randomly to the input graph"""
     # Number of edges should be a percentage
 
-    def __init__(self, num_edges_add: int, allow_self_loops: bool = False):
+    def __init__(self, ratio_edges: float, num_edges: int = None, allow_self_loops: bool = False):
+        r"""Initialize the transformation.
+        Args:
+            ratio_edges (float, default=0.05): Ratio between 0 and 1, of the current number of edges in the graph.
+                If the result of multiplying is not a whole number, the program will round down to the nearest integer.
+            num_edges (int, optional): Sets exactly how many edges should be added to the graph.
+                Setting this value will ignore the input for ratio_edges and use this as a configuration instead.
+            allow_self_loops (bool, default=False): Set whether the transformation should include edges with the same node
+                as beginning and end points."""
+        
+        assert ratio_edges > 0
+        assert ratio_edges < 1
+        
         super().__init__()
-        self._num_edges_add = num_edges_add
+        if (num_edges != None):
+            self._num_edges_add = num_edges
+            self._ratio_edges = None
+        else:
+            # Initialization deferred to __call__() since we don't yet know the amount of edges
+            self._num_edges_add = None
+            self._ratio_edges = ratio_edges
         self._rand_threshold = 0.1
         self._allow_self_loops = allow_self_loops
 
     def __call__(self, data: Data | HeteroData) -> Data | HeteroData:
 
         data.validate()
+
+        if self._num_edges_add == None and self._ratio_edges != None:
+            self._num_edges_add = floor(self._ratio_edges * data.edge_index.shape[0])
         
         complete_graph_edge_count = (data.num_nodes * (data.num_nodes - 1))/2
         free_edge_spot_count = complete_graph_edge_count - data.num_edges
