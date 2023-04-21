@@ -63,6 +63,9 @@ class AddRandomEdges(BaseTransform):
                         break
                 # Add edge to graph
                 data.edge_index = torch.cat((data.edge_index, edge.unsqueeze(0)), dim=0)
+
+            data.validate()
+            return data
                 
         else:
 
@@ -82,6 +85,8 @@ class AddRandomEdges(BaseTransform):
             # Select the edges we want to add randomly
             edges_to_add = nonexistant_edge_set[np.random.choice(nonexistant_edge_set.shape[0], size=5, replace=False)]
             data.edge_index = torch.cat((data.edge_index, edges_to_add))
+
+            data.validate()
             return data
 
 
@@ -90,4 +95,4 @@ class AddRandomEdges(BaseTransform):
         since by default the indexes in """
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(num_edges={self._num_edges})"
+        return f"{self.__class__.__name__}(ratio_edges={self._ratio_edges}, num_edges={self._num_edges_add}, allow_self_loops={self._allow_self_loops})"

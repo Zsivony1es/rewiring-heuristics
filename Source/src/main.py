@@ -7,21 +7,22 @@ from torch_geometric import datasets
 # TODO: Put this in a TestingDriver class
 
 ### Define transformation (AKA rewiring)
-# rewiring = AddRandomEdge()
+rewiring = AddRandomEdges(ratio_edges=0.03)
 
 ### Load datasets
 dset_base = "Source/res"
 logging.info(f"Beginning to load datasets\tRoot: {dset_base}")
 datasets = [
-    datasets.Planetoid(root=f'{dset_base}/cora', name='Cora'),
+    # datasets.Planetoid(root=f'{dset_base}/cora', name='Cora'),
     # datasets.AmazonProducts(root=f'{dset_base}/amazonprods', transform=rewiring),
     # datasets.PPI(root=f'{dset_base}/ppi', transform=rewiring),
     # datasets.TUDataset(root=f'{dset_base}/enzymes', name='ENZYMES'),
-    datasets.Planetoid(root=f'{dset_base}/citeseer', name='CiteSeer')
+    datasets.Planetoid(root=f'{dset_base}/cora_tf', name='Cora', transform=rewiring)
 ]
 logging.info(f"Loading datasets DONE!")
 
 logging.info(f"Creating models with loaded datasets...")
+# try GCN as well, GIN
 models = list(map(lambda dset: GAT(dset.num_features, 256, dset.num_classes), datasets))
 logging.info(f"Creating models DONE!")
 optimizers = list(map(lambda model: torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=5e-4), models))
