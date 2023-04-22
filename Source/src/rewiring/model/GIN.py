@@ -7,7 +7,7 @@ from torch.nn import Sequential, Linear, ReLU, Dropout
 
 class GIN(torch.nn.Module):
     def __init__(self, num_features, num_classes):
-        super(Net, self).__init__()
+        super(GIN, self).__init__()
         dim = 32
         self.conv1 = GINConv(Sequential(Linear(num_features, dim), ReLU(), Linear(dim, dim)))
         self.bn1 = torch.nn.BatchNorm1d(dim)
