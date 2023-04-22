@@ -43,6 +43,6 @@ class GraphBuilder:
         if (self._x is not None) and (self._edge_index is not None) and (self._edge_attr is not None) and (self._y is not None):
             return Data(x=self._x, edge_index=self._edge_index, edge_attr=self._edge_attr, y=self._y)
         else:
-            raise 
+            raise RuntimeError("Can't create graph, some properties are not specified!")
 
 

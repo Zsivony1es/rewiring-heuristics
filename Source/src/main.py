@@ -31,7 +31,7 @@ match cfg.rewiring:
     case _: raise ValueError(f'Invalid rewiring setting: {abbr}')
 
 ### Load datasets
-dset_base = "Source/res"
+dset_base = "Source/res/datasets"
 logger.info(f"Beginning to load datasets\tRoot: {dset_base}")
 datasets = [
     # datasets.Planetoid(root=f'{dset_base}/cora', name='Cora'),
