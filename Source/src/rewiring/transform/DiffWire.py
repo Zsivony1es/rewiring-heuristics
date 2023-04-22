@@ -1,4 +1,4 @@
-from torch_geometric.data.data import Data, HeteroData
+from torch_geometric.data import Data, HeteroData
 from torch_geometric.transforms import BaseTransform
 
 class DiffWire(BaseTransform):

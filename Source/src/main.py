@@ -11,7 +11,7 @@ from utils import get_rewiring_full_name
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 ### Parse arguments

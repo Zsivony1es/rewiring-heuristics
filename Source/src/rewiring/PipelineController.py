@@ -27,20 +27,24 @@ class PipelineController():
         self._loss_function = loss_function
         pass
 
-    def _init_models(self, model_abbr: str) -> list[torch.nn.Model]:
+    def _init_models(self, model_abbr: str) -> list[torch.nn.Module]:
         self._logger.info(f"Creating models with loaded datasets...")
         model_list = None
         match model_abbr:
             case 'GAT': model_list = list(map(lambda dset: GAT(dset.num_features, 256, dset.num_classes), self._datasets))
-            case 'GIN': model_list = list(map(lambda dset: GIN(dset.num_features, 256, dset.num_classes), self._datasets))
-            case 'GCN': model_list = list(map(lambda dset: GCN(dset.num_features, 256, dset.num_classes), self._datasets))
+            case 'GIN': model_list = list(map(lambda dset: GIN(dset.num_features, dset.num_classes), self._datasets))
+            case 'GCN': model_list = list(map(lambda dset: GCN(dset.num_features, dset.num_classes), self._datasets))
             case _: raise ValueError(f'Invalid model setting: {model_abbr}')
         if model_list is not None:
             self._logger.info(f"Creating models DONE!")
+            return model_list
+        else:
+            self._logger.info(f"Error initializing models! (model_list is None)")
             
     def _init_optimizers(self) -> list[torch.optim.Adam]:
         opt = None
         self._logger.info(f"Creating optimizers...")
+        self._logger.debug(f"self._models: {self._models}")
         opt = list(map(lambda model: torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=5e-4), self._models))
         if opt is not None:
             self._logger.info(f"Creating optimizers DONE!")
