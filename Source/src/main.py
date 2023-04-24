@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 ### Parse arguments
 parser = argparse.ArgumentParser(description='Try out different rewiring techniques with different datasets and evaluate them.')
 parser.add_argument('--model_type', required=True, type=str, choices=['GCN', 'GIN', 'GAT'], help='Options: GCN, GIN, GAT')
-parser.add_argument('--rewiring', required=True, type=str, choices=['ARE', 'RD', 'DW'], help='Options: ARE = AddRandomEdges, RD = ReduceDiameter, DW = DiffWire')
+parser.add_argument('--rewiring', required=False, type=str, choices=['ARE', 'RD', 'DW'], help='Options: ARE = AddRandomEdges, RD = ReduceDiameter, DW = DiffWire')
 parser.add_argument('--generate_plots', action='store_true', help='Set to output graph images to Source/out')
 cfg = parser.parse_args()
 

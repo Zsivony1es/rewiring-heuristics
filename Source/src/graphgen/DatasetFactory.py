@@ -1,11 +1,10 @@
 from graphgen.GraphBuilder import GraphBuilder
 from graphgen.GraphGenDataset import GraphGenDataset
-from torch_geometric.data import Dataset
 import json
 
 
 class DatasetFactory:
-    """Used to generate a pseudo-random :obj:`MyDataset`."""
+    """Used to generate the files of a pseudo-random dataset, that can be used by the :obj:`GraphGenDataset` class."""
     
     def __init__(self, json_path: str, graph_count: int) -> None:
         assert json_path is not None, "The path to the JSON file must be set!"
@@ -19,9 +18,9 @@ class DatasetFactory:
             conf=self._conf,
             rand_seed=self._randomizer_seed)
         
-    def generate_dataset(self) -> GraphGenDataset:
+    def generate_dataset_files(self) -> GraphGenDataset:
         for _ in range(self._graph_count):
-            self._graph_gen.build()
+            dset = self._graph_gen.build()
         pass
         
     
