@@ -21,14 +21,14 @@ parser.add_argument('--rewiring', required=True, type=str, choices=['ARE', 'RD',
 parser.add_argument('--generate_plots', action='store_true', help='Set to output graph images to Source/out')
 cfg = parser.parse_args()
 
-logger.info(f'Parsed arguments:\tModel type: {cfg.model_type}\t\tRewiring strategy: {get_rewiring_full_name(cfg.rewiring)}\t\tgenerate_plots: {cfg.generate_plots}')
+print(f'Parsed arguments:\n  Model type:\t\t {cfg.model_type}\n  Rewiring strategy:\t {get_rewiring_full_name(cfg.rewiring)}\n  generate_plots:\t {cfg.generate_plots}')
 
 ### Define transformation
 match cfg.rewiring:
     case 'ARE': rewiring = AddRandomEdges(ratio_edges=0.03)
     case 'RD': rewiring = ReduceDiameter()
     case 'DW': rewiring = DiffWire()
-    case _: raise ValueError(f'Invalid rewiring setting: {abbr}')
+    case _: raise ValueError(f'Invalid rewiring setting: {cfg.rewiring}')
 
 ### Load datasets
 dset_base = "Source/res/datasets"
