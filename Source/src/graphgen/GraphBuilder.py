@@ -1,20 +1,17 @@
 import torch
-import json
 import random as rn
 import numpy as np
 from torch_geometric.data import Data
 import networkx as nx
-import torch_geometric
 
 
 class GraphBuilder:
     """Used to generate a graph instance of :obj:`torch_geometric.data.Data`"""
 
-    def __init__(self, json_path: str = None) -> None:
-        assert json_path is not None
-
-        conf = json.load(open(json_path,'r'))
-        self._generate_graph_from_config(conf=conf)
+    def __init__(self, conf: dict, rand_seed: int) -> None:
+        assert conf is not None
+        rn.seed(rand_seed)
+        self._conf = conf
 
     def _get_base_graph(self, directed: bool, multiple_edges: bool) -> None:
         """Assign to :obj:`self._G` one of the four main graph types"""
@@ -66,8 +63,9 @@ class GraphBuilder:
     def build(self) -> Data:
         """Returns the graph as an instance of :obj:`torch_geometric.data.Data`."""
         
-        # couldn't get torch_geometric.utils.from_networkx() working
+        self._generate_graph_from_config(conf=self._conf)
 
+        # couldn't get torch_geometric.utils.from_networkx() working
         edges = [(edge[0], edge[1]) for edge in self._G.edges]
         edge_index = torch.tensor(edges).t().contiguous()
         num_nodes = self._G.number_of_nodes()

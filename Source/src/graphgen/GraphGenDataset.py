@@ -1,7 +1,7 @@
 import torch
-from torch_geometric.data import InMemoryDataset
+from torch_geometric.data import Dataset
 
-class MyDataset(InMemoryDataset):
+class GraphGenDataset(Dataset):
     """An object representation of the synthetic datasets created by Peter Ivony"""
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
         super().__init__(root, transform, pre_transform, pre_filter)

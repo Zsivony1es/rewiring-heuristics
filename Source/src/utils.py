@@ -1,4 +1,3 @@
-
 def get_rewiring_full_name(abbr: str) -> str:
     rew_names = ['AddRandomEdges', 'ReduceDiameter', 'DiffWire']
     match abbr:
