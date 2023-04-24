@@ -28,6 +28,7 @@ match cfg.rewiring:
     case 'ARE': rewiring = AddRandomEdges(ratio_edges=0.03)
     case 'RD': rewiring = ReduceDiameter()
     case 'DW': rewiring = DiffWire()
+    case None: rewiring = None
     case _: raise ValueError(f'Invalid rewiring setting: {cfg.rewiring}')
 
 ### Load datasets
