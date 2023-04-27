@@ -24,12 +24,14 @@ cfg = parser.parse_args()
 print(f'Parsed arguments:\n  Model type:\t\t {cfg.model_type}\n  Rewiring strategy:\t {get_rewiring_full_name(cfg.rewiring)}\n  generate_plots:\t {cfg.generate_plots}')
 
 ### Define transformation
-match cfg.rewiring:
-    case 'ARE': rewiring = AddRandomEdges(ratio_edges=0.03)
-    case 'RD': rewiring = ReduceDiameter()
-    case 'DW': rewiring = DiffWire()
-    case None: rewiring = None
-    case _: raise ValueError(f'Invalid rewiring setting: {cfg.rewiring}')
+rewiring_options = {
+    'ARE': AddRandomEdges(ratio_edges=0.03),
+    'RD': ReduceDiameter(),
+    'DW': DiffWire(),
+    None: None,
+}
+
+rewiring = rewiring_options.get(cfg.rewiring, ValueError(f'Invalid rewiring setting: {cfg.rewiring}'))
 
 ### Load datasets
 dset_base = "Source/res/datasets"

@@ -8,10 +8,10 @@ import networkx as nx
 class GraphBuilder:
     """Used to generate a graph instance of :obj:`torch_geometric.data.Data`"""
 
-    def __init__(self, conf: dict, rand_seed: int) -> None:
+    def __init__(self, conf: dict, seed: int) -> None:
         assert conf is not None
-        rn.seed(rand_seed)
-        self._conf = conf
+        rn.seed(seed)
+        self._conf: dict = conf
 
     def _get_base_graph(self, directed: bool, multiple_edges: bool) -> None:
         """Assign to :obj:`self._G` one of the four main graph types"""
@@ -19,19 +19,20 @@ class GraphBuilder:
         ret_ind = int(directed) + (2 * int(multiple_edges))
         self._G = types[ret_ind]
 
-    def _generate_graph_from_config(self, conf: dict) -> Data:
+    def _generate_graph_from_config(self) -> Data:
         """Create a graph based on the configuration received"""
-        self._get_base_graph(directed=conf['directed'], multiple_edges=conf['multiple_edges'])
-        self._generate_nodes(node_count=conf['node_count'], 
-                             node_feature_dim=conf['node_feature_dim'])
-        self._generate_edges(node_count=conf['node_count'], 
-                             edge_count=conf['edge_count'], 
-                             edge_feature_dim=conf['edge_feature_dim'], 
-                             loop_edges=conf['loop_edges'], 
-                             multiple_edges=conf['multiple_edges'])
-        if conf['train_goal'] == 'node':
-            self._generate_node_labels(node_count=conf['node_count'])
-        elif conf['train_goal'] == 'graph':
+        print(f"{self._conf}")
+        self._get_base_graph(directed=self._conf['directed'], multiple_edges=self._conf['multiple_edges'])
+        self._generate_nodes(node_count=self._conf['node_count'], 
+                             node_feature_dim=self._conf['node_feature_dim'])
+        self._generate_edges(node_count=self._conf['node_count'], 
+                             edge_count=self._conf['edge_count'], 
+                             edge_feature_dim=self._conf['edge_feature_dim'], 
+                             loop_edges=self._conf['loop_edges'], 
+                             multiple_edges=self._conf['multiple_edges'])
+        if self._conf['train_goal'] == 'node':
+            self._generate_node_labels(node_count=self._conf['node_count'])
+        elif self._conf['train_goal'] == 'graph':
             self._generate_graph_label()
         else:
             raise RuntimeError(f'Invalid configuration value for "train_goal" - {conf["train_goal"]}\nValid options: node, graph')
@@ -63,7 +64,7 @@ class GraphBuilder:
     def build(self) -> Data:
         """Returns the graph as an instance of :obj:`torch_geometric.data.Data`."""
         
-        self._generate_graph_from_config(conf=self._conf)
+        self._generate_graph_from_config()
 
         # couldn't get torch_geometric.utils.from_networkx() working
         edges = [(edge[0], edge[1]) for edge in self._G.edges]
