@@ -28,11 +28,11 @@ class ReduceDiameter(BaseTransform):
         if max_diam is not None:
             assert max_diam > 0, "Maximum diameter must be positive!"
             self._max_diam = max_diam
-            self._ratio_edges = None
+            self._min_density = None
         else:
             assert min_density > 0 and min_density <= 1, "Minimum density must be bigger than 0 and at most 1!"
             self._max_diam = None
-            self._ratio_edges = min_density
+            self._min_density = min_density
     
 
     def __call__(self, data: Data | HeteroData) -> Data | HeteroData:
@@ -42,9 +42,18 @@ class ReduceDiameter(BaseTransform):
         G = to_networkx(data, to_undirected=is_undirected(data.edge_index))
         if self._max_diam is not None:
             while nx.diameter(G) > self._max_diam:
-                pass
+                shortest_paths = dict(nx.all_pairs_shortest_path(G=G))
+                longest_ind = (0,0)
+
+                for node1, paths in shortest_paths.items():
+                    for node2, path in paths.items():
+                        if len(path) > len(shortest_paths[longest_ind[0]][longest_ind[1]]):
+                            longest_ind = (node1, node2) 
+
+                G.add_edge(*longest_ind)
         else:
-            floor(self._ratio_edges * data.edge_index.shape[0])
+            while nx.density(G) < self._min_density:
+                pass
 
 
 
