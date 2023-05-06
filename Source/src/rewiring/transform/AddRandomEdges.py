@@ -1,5 +1,7 @@
 from torch_geometric.data import Data, HeteroData
 from torch_geometric.transforms import BaseTransform
+from torch_geometric.utils import is_undirected
+
 import numpy as np
 import torch
 from math import ceil
@@ -36,7 +38,10 @@ class AddRandomEdges(BaseTransform):
 
         data.validate()
         
-        complete_graph_edge_count = (data.num_nodes * (data.num_nodes - 1))/2
+        if is_undirected(data.edge_index):
+            complete_graph_edge_count = (data.num_nodes * (data.num_nodes - 1))/2
+        else:
+            complete_graph_edge_count = data.num_nodes * (data.num_nodes - 1)
         free_edge_spot_count = complete_graph_edge_count - data.num_edges
 
         if self._num_edges_add == None and self._min_density != None:

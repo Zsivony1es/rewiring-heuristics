@@ -12,26 +12,27 @@ class ReduceDiameter(BaseTransform):
 
     # input: maximum diameter or percentage of edges added
 
-    def __init__(self, max_diam: Optional[int] = None, ratio_edges: Optional[float] = None, allow_self_loops: bool = False) -> None:
+    def __init__(self, max_diam: Optional[int] = None, min_density: Optional[float] = None, allow_self_loops: bool = False) -> None:
         r"""Initialize the transformation.
         Args:
             max_diam (int, optional): Continues adding edges into the graph, until the graph diameter is reduced to 
                 at most this value.
-            ratio_edges (float, optional): Ratio between 0 and 1, of the current number of edges in the graph.
-                If the result of multiplying is not a whole number, the program will round down to the nearest integer.
+            ratio_edges (float, optional): Ratio between 0 and 1. Sets how dense the graph should be filled with edges,
+                compared to the complete graph, e.g. 0.25 means that after running the algorithm, the resulting graph will include
+                at least 25% of all the edges in the complete graph
             allow_self_loops (bool, default=False): Set whether the transformation should include edges with the same node
                 as beginning and end points."""
         
         super().__init__()
-        assert not ((max_diam is None) and (ratio_edges is None)), "Either the maximum diameter or a ratio to the amount of current edges must be specified!"
+        assert not ((max_diam is None) and (min_density is None)), "Either the maximum diameter or a ratio to the amount of current edges must be specified!"
         if max_diam is not None:
             assert max_diam > 0, "Maximum diameter must be positive!"
             self._max_diam = max_diam
             self._ratio_edges = None
         else:
-            assert ratio_edges > 0, "Ratio must be larger than 0!"
+            assert min_density > 0 and min_density <= 1, "Minimum density must be bigger than 0 and at most 1!"
             self._max_diam = None
-            self._ratio_edges = ratio_edges
+            self._ratio_edges = min_density
     
 
     def __call__(self, data: Data | HeteroData) -> Data | HeteroData:
