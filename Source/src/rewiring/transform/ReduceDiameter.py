@@ -1,10 +1,11 @@
 from torch_geometric.data import Data, HeteroData
 from torch_geometric.transforms import BaseTransform
-from torch_geometric.utils import to_networkx, is_undirected, contains_self_loops
+from torch_geometric.utils import from_networkx, to_networkx, is_undirected, contains_self_loops
 
 import networkx as nx
-from typing import Optional
+from typing import Optional, Any
 from math import floor
+import random
 
 class ReduceDiameter(BaseTransform):
     r"""Graph rewiring heuristic, that adds an edge between the two nodes, which have the longest shortest path 
@@ -40,20 +41,46 @@ class ReduceDiameter(BaseTransform):
         data.validate()
 
         G = to_networkx(data, to_undirected=is_undirected(data.edge_index))
+
+        # If the graph is disconnected, then the rewiring first connects
+        # all connected components, so that the rewiring can be ran
+        components = list(nx.connected_components(G))
+        if len(components) != 1:
+            for component in components:
+                if len(component) >= 1:
+                    random_node = random.sample(component, 1)[0]
+                    # Add edges from each disconnected node to the random node
+                    for node in G.nodes():
+                        if node not in component:
+                            G.add_edge(node, random_node)
+                    break
+
         if self._max_diam is not None:
             while nx.diameter(G) > self._max_diam:
-                shortest_paths = dict(nx.all_pairs_shortest_path(G=G))
-                longest_ind = (0,0)
-
-                for node1, paths in shortest_paths.items():
-                    for node2, path in paths.items():
-                        if len(path) > len(shortest_paths[longest_ind[0]][longest_ind[1]]):
-                            longest_ind = (node1, node2) 
-
-                G.add_edge(*longest_ind)
+                G = self._add_edge_shortest_path(G)
         else:
             while nx.density(G) < self._min_density:
-                pass
+                G = self._add_edge_shortest_path(G)
+
+        return from_networkx(G)
+
+        
+
+    def _add_edge_shortest_path(self, G):
+        r"""Finds the longest shortest path in :obj:`G` and inserts an edge between the start and end node
+            of the path.
+        Args:
+            G (required): Any type of graph object from NetworkX, e.g. :obj:`Graph`, :obj:`DiGraph`, etc."""
+        shortest_paths = dict(nx.all_pairs_shortest_path(G=G))
+        longest_ind = (0,0)
+
+        for node1, paths in shortest_paths.items():
+            for node2, path in paths.items():
+                if len(path) > len(shortest_paths[longest_ind[0]][longest_ind[1]]):
+                    longest_ind = (node1, node2) 
+
+        G.add_edge(*longest_ind)
+        return G
 
 
 

@@ -25,8 +25,8 @@ print(f'Parsed arguments:\n  Model type:\t\t {cfg.model_type}\n  Rewiring strate
 
 ### Define transformation
 rewiring_options = {
-    'ARE': AddRandomEdges(ratio_edges=0.03),
-    'RD': ReduceDiameter(),
+    'ARE': AddRandomEdges(),
+    'RD': ReduceDiameter(max_diam=3),
     'DW': DiffWire(),
     None: None,
 }
