@@ -40,7 +40,7 @@ class ReduceDiameter(BaseTransform):
 
         data.validate()
 
-        G = to_networkx(data, to_undirected=is_undirected(data.edge_index))
+        G = self._to_networkx(data)
 
         # If the graph is disconnected, then the rewiring first connects
         # all connected components, so that the rewiring can be ran
@@ -62,9 +62,26 @@ class ReduceDiameter(BaseTransform):
             while nx.density(G) < self._min_density:
                 G = self._add_edge_shortest_path(G)
 
-        return from_networkx(G)
+        return self._from_networkx(G)
 
+    def _to_networkx(self, data):
         
+        if is_undirected(data.edge_index):
+            G = nx.MultiGraph()
+        else:
+            G = nx.MultiDiGraph()
+
+        for i in range(data.num_nodes):
+            attr = data.x[i].numpy()
+            G.add_node(i, attr=attr)
+        for i, j in zip(data.edge_index[0], data.edge_index[1]):
+            G.add_edge(i.item(), j.item())
+
+        return G
+
+    
+    def _from_networkx(self, G):
+        return from_networkx(G)
 
     def _add_edge_shortest_path(self, G):
         r"""Finds the longest shortest path in :obj:`G` and inserts an edge between the start and end node

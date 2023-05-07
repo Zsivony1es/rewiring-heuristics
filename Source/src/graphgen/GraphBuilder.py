@@ -35,7 +35,7 @@ class GraphBuilder:
         elif self._conf['train_goal'] == 'graph':
             self._generate_graph_label()
         else:
-            raise RuntimeError(f'Invalid configuration value for "train_goal" - {conf["train_goal"]}\nValid options: node, graph')
+            raise RuntimeError(f'Invalid configuration value for "train_goal" - {self._conf["train_goal"]}\nValid options: node, graph')
 
     def _generate_nodes(self, node_count: int, node_feature_dim: int) -> None:
         """Generate :obj:`node_count` number of nodes, each one with :obj:`node_feature_dim` attributes, which are integers between 0 and 10"""
