@@ -5,7 +5,9 @@ from torch_geometric.utils import from_networkx, to_networkx, is_undirected, con
 import networkx as nx
 from typing import Optional, Any
 from math import floor
+import numpy as np
 import random
+import torch
 
 class ReduceDiameter(BaseTransform):
     r"""Graph rewiring heuristic, that adds an edge between the two nodes, which have the longest shortest path 
@@ -64,7 +66,7 @@ class ReduceDiameter(BaseTransform):
 
         return self._from_networkx(G)
 
-    def _to_networkx(self, data):
+    def _to_networkx(self, data: Data):
         
         if is_undirected(data.edge_index):
             G = nx.MultiGraph()
@@ -74,14 +76,38 @@ class ReduceDiameter(BaseTransform):
         for i in range(data.num_nodes):
             attr = data.x[i].numpy()
             G.add_node(i, attr=attr)
-        for i, j in zip(data.edge_index[0], data.edge_index[1]):
-            G.add_edge(i.item(), j.item())
+
+        if data.edge_attr is None:
+            for i, j in zip(data.edge_index[0], data.edge_index[1]):
+                G.add_edge(i.item(), j.item())
+        else:
+            # TODO
+            pass
 
         return G
 
     
-    def _from_networkx(self, G):
-        return from_networkx(G)
+    def _from_networkx(self, G) -> Data:
+
+        nodeattr_dict = nx.get_node_attributes(G, 'attr')
+        list_of_lists = [[key] + value.tolist() for key, value in nodeattr_dict.items()]
+
+        x = torch.tensor(list_of_lists)
+        edge_index = torch.transpose(torch.tensor(list(map(lambda x: (x[0], x[1]), G.edges))), 0, 1)
+
+        edge_list = list(G.edges(data=True))
+        edge_attr_names = {k for _, _, attrs in edge_list for k in attrs.keys()}
+
+        # If we have edge attributes
+        if edge_attr_names:
+            edge_attrs = []
+            for edge_attr_name in edge_attr_names:
+                edge_attrs.append(torch.tensor([G[u][v][edge_attr_name] for u, v, w in G.edges]))
+            data = Data(x=x, edge_index=edge_index, edge_attr=torch.stack(edge_attrs, dim=1))
+        else:
+            data = Data(x=x, edge_index=edge_index)
+
+        return data
 
     def _add_edge_shortest_path(self, G):
         r"""Finds the longest shortest path in :obj:`G` and inserts an edge between the start and end node
