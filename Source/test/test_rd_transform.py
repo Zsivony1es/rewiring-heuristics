@@ -76,8 +76,7 @@ def test_rd_from_networkx_conversion_undirected():
     assert str(G.__class__) == "<class 'networkx.classes.multigraph.MultiGraph'>"
 
 def test_rd_conversion_integration_cora():
-    dset_base = "Source/res/datasets"
-    dataset = datasets.Planetoid(root=f'{dset_base}/cora_tf', name='Cora')
+    dataset = datasets.Planetoid(root='../res/datasets/cora_tf', name='Cora')
     expected_data = dataset.get(0)
 
     rd = ReduceDiameter(5)
