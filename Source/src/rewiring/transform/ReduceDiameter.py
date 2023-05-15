@@ -77,12 +77,14 @@ class ReduceDiameter(BaseTransform):
             attr = data.x[i].numpy()
             G.add_node(i, attr=attr)
 
-        if data.edge_attr is None:
+        for i, j in zip(data.edge_index[0], data.edge_index[1]):
+            G.add_edge(i.item(), j.item())
+        
+        if data.edge_attr is not None:
+            edge_count = 0
             for i, j in zip(data.edge_index[0], data.edge_index[1]):
-                G.add_edge(i.item(), j.item())
-        else:
-            # TODO
-            pass
+                G.edges[(i.item(), j.item())]['weight'] = data.edge_attr[edge_count,:].tolist()
+                edge_count += 1
 
         return G
 

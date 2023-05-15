@@ -3,4 +3,7 @@
 /Source/res/*
 !/Source/res/dset1
 !/Source/res/dset2
+/.vscode
+/.pytest_cache
+/.conda
 **/__pycache__
