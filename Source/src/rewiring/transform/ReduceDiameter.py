@@ -85,7 +85,15 @@ class ReduceDiameter(BaseTransform):
             y = None
 
         # Get edge indices, edge attributes, and edge directions
-        edge_index = torch.tensor([[u, v] for u, v, _ in G.edges]).t().contiguous()
+        
+        if not G.is_directed():
+            edge_list = []
+            for u, v in G.edges():
+                edge_list.append([u,v])
+                edge_list.append([v,u])
+        else:
+            edge_list = [[u, v] for u, v in G.edges]
+        edge_index = torch.tensor(edge_list).t().contiguous()
 
         has_attr_field = any('attr' in data for u, v, data in G.edges(data=True))
         if has_attr_field:

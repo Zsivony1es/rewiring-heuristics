@@ -128,15 +128,17 @@ def test_rd_from_networkx_conversion_undirected():
     assert torch.all(torch.eq(data.x, expected_x)).item()
     assert torch.all(torch.eq(data.edge_index, expected_edge_index)).item()
     assert str(G.__class__) == "<class 'networkx.classes.multigraph.MultiGraph'>"
-
+    
 
 def test_rd_conversion_integration_cora():
+
     dataset = datasets.Planetoid(root='../res/datasets/cora_tf', name='Cora')
     expected_data = dataset.get(0)
-    
-    G = ReduceDiameter._to_networkx(data=expected_data)
 
-    data = ReduceDiameter._from_networkx(G=G)
+    rd = ReduceDiameter(5)
+    
+    G = rd._to_networkx(data=expected_data)
+    data = rd._from_networkx(G=G)
 
     expected_edge_index = _sort_edge_index(expected_data.edge_index)
     got_edge_ind = _sort_edge_index(data.edge_index)
