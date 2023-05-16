@@ -56,14 +56,14 @@ def test_rd_to_networkx_conversion_undirected():
                       [4, 0, 0, 0, 0, 1]], dtype=torch.float)
     
     y = torch.tensor([1, 2, 3, 4, 5])
-    
-    data = Data(x=x, edge_index=edge_index)
+    rd = ReduceDiameter(5)
+    data = Data(x=x, edge_index=edge_index, y=y)
 
-    G = ReduceDiameter._to_networkx(data=data)
-    asd = torch.tensor(list(map(lambda tuple: tuple[1]['attr'], G.nodes.data())))
+    G = rd._to_networkx(data=data)
+    asd = torch.tensor(list(map(lambda tuple: tuple[1]['feat'], G.nodes.data())))
 
     assert torch.all(torch.eq(asd, x)).item()
-    assert str(G.__class__) == "<class 'networkx.classes.multigraph.MultiGraph'>"
+    assert str(G.__class__) == "<class 'networkx.classes.graph.Graph'>"
 
 def test_rd_to_networkx_conversion_directed():
     edge_index = torch.tensor([[0, 1, 1, 2],

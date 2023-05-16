@@ -70,7 +70,7 @@ class ReduceDiameter(BaseTransform):
 
         return self._from_networkx(G)
 
-    def _from_networkx(nx_graph):
+    def _from_networkx(self, nx_graph):
         # Infer graph type (directed or undirected)
         is_directed = nx_graph.is_directed()
 
@@ -105,29 +105,38 @@ class ReduceDiameter(BaseTransform):
 
         return data
 
-    def _to_networkx(data):
-        # Infer graph type (directed or undirected)
-        is_directed = data.is_directed
+    def _to_networkx(self, data: Data) -> nx.Graph | nx.MultiGraph | nx.DiGraph | nx.MultiDiGraph:
+        """Converts a :obj:`torch_geometric.data.data.Data` object into a NetworkX graph."""
 
-        # Create empty NetworkX graph
-        if data.is_multigraph:
+        # Infer NetworkX graph type
+        is_directed = data.is_directed()
+        if ReduceDiameter._is_multigraph(data=data):
             graph_class = nx.MultiDiGraph if is_directed else nx.MultiGraph
             nx_graph = graph_class()
         else:
             graph_class = nx.DiGraph if is_directed else nx.Graph
             nx_graph = graph_class()
 
-
+        # Save attributes, which won't be affected by rewiring
+        # They can be returned without any conversion in _from_networkx()
+        if data.x is not None:
+            self._x = data.x
+        if data.y is not None:
+            self._y = data.y
 
         # Add nodes with features
         for i, feat in enumerate(data.x):
-            nx_graph.add_node(data.node_indices[i], feat=feat.item())
+            nx_graph.add_node(i, feat=feat.tolist())
 
-        # Add edges with attributes
-        for u, v in data.edge_index.t().tolist():
-            edge_attrs = data.edge_attr[(data.edge_index[0] == u) & (data.edge_index[1] == v)]
-            for attr in edge_attrs:
-                nx_graph.add_edge(u, v, weight=attr.item())
+        # Add edges with attributes (if they exist)
+        if data.edge_attr is not None:
+            edge_index = 0
+            for u, v in data.edge_index.t().tolist():
+                nx_graph.add_edge(u, v, attr=data.edge_attr[edge_index].tolist())
+                edge_index += 1
+        else:
+            for u, v in data.edge_index.t().tolist():
+                nx_graph.add_edge(u, v)
 
         return nx_graph
 
@@ -149,17 +158,21 @@ class ReduceDiameter(BaseTransform):
 
     def _is_multigraph(edge_index: torch.Tensor=None, data: Data=None) -> bool:
         if data is not None:
-            edge_index = data.edge_index
+            edge_indices = data.edge_index
         elif edge_index is not None:
-            pass
+            edge_indices = edge_index
         else:
             raise RuntimeError("Either edge_index or data must be set!")
-        
-        num_cols = edge_index.size(1)
+
+        num_cols = edge_indices.size(1)
+        if num_cols < 2:
+            return False
+
         for col1_ind in range(num_cols):
             for col2_ind in range(col1_ind + 1, num_cols):
-                col1 = edge_index[:, col1_ind]
-                col2 = edge_index[:, col2_ind]
+                print(edge_index)
+                col1 = edge_indices[:, col1_ind]
+                col2 = edge_indices[:, col2_ind]
                 if torch.all(torch.eq(col1, col2)).item():
                     return True
         return False   
