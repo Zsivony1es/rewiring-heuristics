@@ -63,7 +63,7 @@ def test_rd_to_networkx_conversion_undirected():
     data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
 
     G = rd._to_networkx(data=data)
-    received_x = torch.tensor(list(map(lambda tuple: tuple[1]['feat'], G.nodes.data())))
+    received_x = torch.tensor(list(map(lambda tuple: tuple[1]['attr'], G.nodes.data())))
 
     assert torch.all(torch.eq(received_x, x)).item()
     assert str(G.__class__) == "<class 'networkx.classes.graph.Graph'>"
@@ -75,7 +75,7 @@ def test_rd_conversion_from_cora():
     rd = ReduceDiameter(5)
     G = rd._to_networkx(data=expected_data)
 
-    received_x = torch.tensor(list(map(lambda tuple: tuple[1]['feat'], G.nodes.data())))
+    received_x = torch.tensor(list(map(lambda tuple: tuple[1]['attr'], G.nodes.data())))
 
     assert torch.all(torch.eq(received_x, expected_data.x)).item()
     assert str(G.__class__) == "<class 'networkx.classes.graph.Graph'>"
@@ -96,9 +96,11 @@ def test_rd_to_networkx_conversion_directed():
     asd = torch.tensor(list(map(lambda tuple: tuple[1]['attr'], G.nodes.data())))
 
     assert torch.all(torch.eq(asd, x)).item()
-    assert str(G.__class__) == "<class 'networkx.classes.multidigraph.MultiDiGraph'>"
+    assert str(G.__class__) == "<class 'networkx.classes.digraph.DiGraph'>"
+
 
 def test_rd_from_networkx_conversion_undirected():
+
     nodes = 6
     G = nx.MultiGraph()
     id = np.identity(nodes)
