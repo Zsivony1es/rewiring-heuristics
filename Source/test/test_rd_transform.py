@@ -45,7 +45,6 @@ def test_rd_is_multigraph():
     assert not ReduceDiameter._is_multigraph(edge_index=edge_index2)
 
 
-
 def test_rd_to_networkx_conversion_undirected():
     edge_index = torch.tensor([[0, 1, 1, 2, 1, 3, 2, 4],
                                [1, 0, 2, 1, 3, 1, 4, 2]], dtype=torch.float)
@@ -54,15 +53,31 @@ def test_rd_to_networkx_conversion_undirected():
                       [2, 0, 0, 1, 0, 0],
                       [3, 0, 0, 0, 1, 0],
                       [4, 0, 0, 0, 0, 1]], dtype=torch.float)
+    edge_attr = torch.tensor([[3.0, 2.0], [3.0, 2.0],
+                            [1.0, 2.0], [1.0, 2.0], 
+                            [2.0, 0.0], [2.0, 0.0],
+                            [0.0, 0.0], [0.0, 0.0]])
     
     y = torch.tensor([1, 2, 3, 4, 5])
     rd = ReduceDiameter(5)
-    data = Data(x=x, edge_index=edge_index, y=y)
+    data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
 
     G = rd._to_networkx(data=data)
-    asd = torch.tensor(list(map(lambda tuple: tuple[1]['feat'], G.nodes.data())))
+    received_x = torch.tensor(list(map(lambda tuple: tuple[1]['feat'], G.nodes.data())))
 
-    assert torch.all(torch.eq(asd, x)).item()
+    assert torch.all(torch.eq(received_x, x)).item()
+    assert str(G.__class__) == "<class 'networkx.classes.graph.Graph'>"
+
+def test_rd_conversion_from_cora():
+    dataset = datasets.Planetoid(root='../res/datasets/cora_tf', name='Cora')
+    print("HELLO WORLD")
+    expected_data = dataset.get(0)
+    rd = ReduceDiameter(5)
+    G = rd._to_networkx(data=expected_data)
+
+    received_x = torch.tensor(list(map(lambda tuple: tuple[1]['feat'], G.nodes.data())))
+
+    assert torch.all(torch.eq(received_x, expected_data.x)).item()
     assert str(G.__class__) == "<class 'networkx.classes.graph.Graph'>"
 
 def test_rd_to_networkx_conversion_directed():
@@ -76,7 +91,8 @@ def test_rd_to_networkx_conversion_directed():
     
     data = Data(x=x, edge_index=edge_index)
 
-    G = ReduceDiameter._to_networkx(data=data)
+    rd = ReduceDiameter(5)
+    G = rd._to_networkx(data=data)
     asd = torch.tensor(list(map(lambda tuple: tuple[1]['attr'], G.nodes.data())))
 
     assert torch.all(torch.eq(asd, x)).item()
@@ -110,6 +126,7 @@ def test_rd_from_networkx_conversion_undirected():
     assert torch.all(torch.eq(data.x, expected_x)).item()
     assert torch.all(torch.eq(data.edge_index, expected_edge_index)).item()
     assert str(G.__class__) == "<class 'networkx.classes.multigraph.MultiGraph'>"
+
 
 def test_rd_conversion_integration_cora():
     dataset = datasets.Planetoid(root='../res/datasets/cora_tf', name='Cora')

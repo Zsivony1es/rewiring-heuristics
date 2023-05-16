@@ -158,24 +158,21 @@ class ReduceDiameter(BaseTransform):
 
     def _is_multigraph(edge_index: torch.Tensor=None, data: Data=None) -> bool:
         if data is not None:
-            edge_indices = data.edge_index
+            edge_index = data.edge_index
         elif edge_index is not None:
-            edge_indices = edge_index
+            pass
         else:
             raise RuntimeError("Either edge_index or data must be set!")
 
-        num_cols = edge_indices.size(1)
+        num_cols = edge_index.size(1)
         if num_cols < 2:
             return False
 
-        for col1_ind in range(num_cols):
-            for col2_ind in range(col1_ind + 1, num_cols):
-                print(edge_index)
-                col1 = edge_indices[:, col1_ind]
-                col2 = edge_indices[:, col2_ind]
-                if torch.all(torch.eq(col1, col2)).item():
-                    return True
-        return False   
+        edge_list = [(edge_index[0, i].item(), edge_index[1, i].item()) for i in range(edge_index.size(1))]
+        unique_edges = set(edge_list)
+
+        # If the lengths don't match then we filtered out multiple edges, which means it is a MultiGraph
+        return len(unique_edges) != len(edge_list)
 
 
     def __repr__(self) -> str:
