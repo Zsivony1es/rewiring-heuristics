@@ -100,16 +100,16 @@ class ReduceDiameter(BaseTransform):
     def _from_networkx(self, G) -> Data:
 
         if self._x is not None:
+            # This will always happen during normal usage of the class
             x = self._x
         else:
+            # Only used in testing
             nodeattr_dict = nx.get_node_attributes(G, 'attr')
             list_of_lists = [[key] + value.tolist() for key, value in nodeattr_dict.items()]
             x = torch.tensor(list_of_lists)
 
-        
-
         edge_index = torch.transpose(torch.tensor(list(map(lambda x: (x[0], x[1]), G.edges))), 0, 1)
-
+        
         edge_list = list(G.edges(data=True))
         edge_attr_names = {k for _, _, attrs in edge_list for k in attrs.keys()}
 

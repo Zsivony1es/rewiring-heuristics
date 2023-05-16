@@ -10,6 +10,27 @@ import logging
 # log = logging.getLogger("RDTransformTest")
 
 
+def _sort_edge_index(edge_index):
+    sorted_indices = torch.argsort(edge_index[0])
+    sorted_tensor = edge_index[:, sorted_indices]
+
+    repeated_indices = torch.where(sorted_tensor[0][1:] == sorted_tensor[0][:-1])[0]
+
+    # Check if there are repeated values
+    if repeated_indices.numel() > 0:
+        # Get start and end indices for each group of repeated values
+        start_indices = torch.cat((torch.tensor([0]), repeated_indices + 1))
+        end_indices = torch.cat((repeated_indices + 1, torch.tensor([sorted_tensor.shape[1]])))
+
+        # Sort the corresponding values in the second array within each group
+        for start, end in zip(start_indices, end_indices):
+            group_sorted_indices_second = torch.argsort(sorted_tensor[1, start:end])
+            sorted_tensor[:, start:end] = sorted_tensor[:, start:end][:, group_sorted_indices_second]
+
+    return sorted_tensor
+
+
+
 def test_rd_to_networkx_conversion_undirected():
     edge_index = torch.tensor([[0, 1, 1, 2, 1, 3, 2, 4],
                                [1, 0, 2, 1, 3, 1, 4, 2]], dtype=torch.float)
@@ -84,8 +105,12 @@ def test_rd_conversion_integration_cora():
 
     data = rd._from_networkx(G=G)
 
-    print(f"data.x parameters: {data.x}\n{expected_data.x}")
+    expected_edge_index = _sort_edge_index(expected_data.edge_index)
+    got_edge_ind = _sort_edge_index(data.edge_index)
+
+    print(f"data.edge_index parameters:\nReceived:\n{got_edge_ind.tolist()}\nExpected:\n{expected_edge_index.tolist()}")
 
     assert torch.all(torch.eq(data.x, expected_data.x)).item()
-    assert torch.all(torch.eq(data.edge_index, expected_data.edge_index)).item()
+    assert got_edge_ind.shape == expected_edge_index.shape
+    assert torch.all(torch.eq(got_edge_ind, expected_edge_index)).item()
     assert torch.all(torch.eq(data.edge_attr, expected_data.edge_attr)).item()
