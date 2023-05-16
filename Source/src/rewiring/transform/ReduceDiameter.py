@@ -70,64 +70,66 @@ class ReduceDiameter(BaseTransform):
 
         return self._from_networkx(G)
 
-    def _to_networkx(self, data: Data):
+    def _from_networkx(nx_graph):
+        # Infer graph type (directed or undirected)
+        is_directed = nx_graph.is_directed()
 
-        # Keep unchanged fields from input data object
-        self._y = data.y
-        self._x = data.x
-        
-        if is_undirected(data.edge_index):
-            G = nx.MultiGraph()
+        # Get node features, labels, and indices
+        node_features = torch.tensor([nx_graph.nodes[n]['feat'] for n in nx_graph.nodes])
+        node_labels = torch.tensor([nx_graph.nodes[n]['label'] for n in nx_graph.nodes])
+        node_indices = torch.tensor(list(nx_graph.nodes))
+
+        # Get edge indices, edge attributes, and edge directions
+        edge_index = torch.tensor(list(nx_graph.edges)).t().contiguous()
+        edge_attr = torch.tensor([nx_graph.edges[u, v]['weight'] for u, v in nx_graph.edges])
+
+        # Determine graph type and handle multiple edges
+        if nx_graph.is_multigraph():
+            graph_class = nx.MultiDiGraph if is_directed else nx.MultiGraph
+            graph = graph_class()
         else:
-            G = nx.MultiDiGraph()
+            graph_class = nx.DiGraph if is_directed else nx.Graph
+            graph = graph_class()
 
-        for i in range(data.num_nodes):
-            attr = data.x[i].numpy()
-            G.add_node(i, attr=attr)
+        # Add nodes with features and labels
+        for i, feat in enumerate(node_features):
+            graph.add_node(node_indices[i], feat=feat.item(), label=node_labels[i].item())
 
-        for i, j in zip(data.edge_index[0], data.edge_index[1]):
-            G.add_edge(i.item(), j.item())
-        
-        if data.edge_attr is not None:
-            edge_count = 0
-            for i, j in zip(data.edge_index[0], data.edge_index[1]):
-                G.edges[(i.item(), j.item())]['weight'] = data.edge_attr[edge_count,:].tolist()
-                edge_count += 1
+        # Add edges with attributes
+        for u, v in edge_index.t().tolist():
+            graph.add_edge(u, v, weight=edge_attr[(edge_index[0] == u) & (edge_index[1] == v)].item())
 
-        return G
+        # Create PyTorch Geometric Data object
+        data = Data(x=node_features, y=node_labels, edge_index=edge_index, edge_attr=edge_attr, is_directed=is_directed)
+        data.node_indices = node_indices
 
-    
-    def _from_networkx(self, G) -> Data:
-
-        if self._x is not None:
-            # This will always happen during normal usage of the class
-            x = self._x
-        else:
-            # Only used in testing
-            nodeattr_dict = nx.get_node_attributes(G, 'attr')
-            list_of_lists = [[key] + value.tolist() for key, value in nodeattr_dict.items()]
-            x = torch.tensor(list_of_lists)
-
-        edge_index = torch.transpose(torch.tensor(list(map(lambda x: (x[0], x[1]), G.edges))), 0, 1)
-        
-        edge_list = list(G.edges(data=True))
-        edge_attr_names = {k for _, _, attrs in edge_list for k in attrs.keys()}
-
-        # If we have edge attributes
-        if edge_attr_names:
-            edge_attrs = []
-            for edge_attr_name in edge_attr_names:
-                edge_attrs.append(torch.tensor([G[u][v][edge_attr_name] for u, v, w in G.edges]))
-            if self._y is not None:
-                data = Data(x=x, edge_index=edge_index, edge_attr=torch.stack(edge_attrs, dim=1), y=self._y)
-            else:
-                data = Data(x=x, edge_index=edge_index, edge_attr=torch.stack(edge_attrs, dim=1))
-        else:
-            if self._y is not None:
-                data = Data(x=x, edge_index=edge_index, y=self._y)
-            else:
-                data = Data(x=x, edge_index=edge_index)
         return data
+
+    def _to_networkx(data):
+        # Infer graph type (directed or undirected)
+        is_directed = data.is_directed
+
+        # Create empty NetworkX graph
+        if data.is_multigraph:
+            graph_class = nx.MultiDiGraph if is_directed else nx.MultiGraph
+            nx_graph = graph_class()
+        else:
+            graph_class = nx.DiGraph if is_directed else nx.Graph
+            nx_graph = graph_class()
+
+
+
+        # Add nodes with features
+        for i, feat in enumerate(data.x):
+            nx_graph.add_node(data.node_indices[i], feat=feat.item())
+
+        # Add edges with attributes
+        for u, v in data.edge_index.t().tolist():
+            edge_attrs = data.edge_attr[(data.edge_index[0] == u) & (data.edge_index[1] == v)]
+            for attr in edge_attrs:
+                nx_graph.add_edge(u, v, weight=attr.item())
+
+        return nx_graph
 
     def _add_edge_shortest_path(self, G):
         r"""Finds the longest shortest path in :obj:`G` and inserts an edge between the start and end node
@@ -145,6 +147,22 @@ class ReduceDiameter(BaseTransform):
         G.add_edge(*longest_ind)
         return G
 
+    def _is_multigraph(edge_index: torch.Tensor=None, data: Data=None) -> bool:
+        if data is not None:
+            edge_index = data.edge_index
+        elif edge_index is not None:
+            pass
+        else:
+            raise RuntimeError("Either edge_index or data must be set!")
+        
+        num_cols = edge_index.size(1)
+        for col1_ind in range(num_cols):
+            for col2_ind in range(col1_ind + 1, num_cols):
+                col1 = edge_index[:, col1_ind]
+                col2 = edge_index[:, col2_ind]
+                if torch.all(torch.eq(col1, col2)).item():
+                    return True
+        return False   
 
 
     def __repr__(self) -> str:

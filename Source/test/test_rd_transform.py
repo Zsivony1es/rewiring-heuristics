@@ -30,20 +30,36 @@ def _sort_edge_index(edge_index):
     return sorted_tensor
 
 
+def test_rd_is_multigraph():
+    edge_index1 = torch.tensor([
+        [0, 1, 0, 1, 2],
+        [1, 0, 1, 0, 1]])
+    edge_index2 = torch.tensor([
+        [0, 1, 2],
+        [1, 0, 1]])
+    
+    data = Data(x=None, edge_index=edge_index1)
+    
+    assert ReduceDiameter._is_multigraph(edge_index=edge_index1)
+    assert ReduceDiameter._is_multigraph(data=data)
+    assert not ReduceDiameter._is_multigraph(edge_index=edge_index2)
+
+
 
 def test_rd_to_networkx_conversion_undirected():
     edge_index = torch.tensor([[0, 1, 1, 2, 1, 3, 2, 4],
                                [1, 0, 2, 1, 3, 1, 4, 2]], dtype=torch.float)
-    x = torch.tensor([[1, 0, 0, 0, 0],
-                      [0, 1, 0, 0, 0],
-                      [0, 0, 1, 0, 0],
-                      [0, 0, 0, 1, 0],
-                      [0, 0, 0, 0, 1]], dtype=torch.float)
+    x = torch.tensor([[0, 1, 0, 0, 0, 0],
+                      [1, 0, 1, 0, 0, 0],
+                      [2, 0, 0, 1, 0, 0],
+                      [3, 0, 0, 0, 1, 0],
+                      [4, 0, 0, 0, 0, 1]], dtype=torch.float)
+    
+    y = torch.tensor([1, 2, 3, 4, 5])
     
     data = Data(x=x, edge_index=edge_index)
-    rd = ReduceDiameter(max_diam=5)
 
-    G = rd._to_networkx(data=data)
+    G = ReduceDiameter._to_networkx(data=data)
     asd = torch.tensor(list(map(lambda tuple: tuple[1]['attr'], G.nodes.data())))
 
     assert torch.all(torch.eq(asd, x)).item()
@@ -59,9 +75,8 @@ def test_rd_to_networkx_conversion_directed():
                       [0, 0, 0, 0, 1]], dtype=torch.float)
     
     data = Data(x=x, edge_index=edge_index)
-    rd = ReduceDiameter(max_diam=5)
 
-    G = rd._to_networkx(data=data)
+    G = ReduceDiameter._to_networkx(data=data)
     asd = torch.tensor(list(map(lambda tuple: tuple[1]['attr'], G.nodes.data())))
 
     assert torch.all(torch.eq(asd, x)).item()
@@ -77,12 +92,12 @@ def test_rd_from_networkx_conversion_undirected():
     G.add_edges_from(edges_to_add)
 
     expected_x = torch.tensor([
-        [0., 1., 0., 0., 0., 0., 0.],
-        [1., 0., 1., 0., 0., 0., 0.],
-        [2., 0., 0., 1., 0., 0., 0.],
-        [3., 0., 0., 0., 1., 0., 0.],
-        [4., 0., 0., 0., 0., 1., 0.],
-        [5., 0., 0., 0., 0., 0., 1.]])
+        [1., 0., 0., 0., 0., 0.],
+        [0., 1., 0., 0., 0., 0.],
+        [0., 0., 1., 0., 0., 0.],
+        [0., 0., 0., 1., 0., 0.],
+        [0., 0., 0., 0., 1., 0.],
+        [0., 0., 0., 0., 0., 1.]])
     
     expected_edge_index = torch.tensor([
         [0, 0, 1, 2, 2, 2, 3],
@@ -99,11 +114,10 @@ def test_rd_from_networkx_conversion_undirected():
 def test_rd_conversion_integration_cora():
     dataset = datasets.Planetoid(root='../res/datasets/cora_tf', name='Cora')
     expected_data = dataset.get(0)
-    rd = ReduceDiameter(5)
     
-    G = rd._to_networkx(data=expected_data)
+    G = ReduceDiameter._to_networkx(data=expected_data)
 
-    data = rd._from_networkx(G=G)
+    data = ReduceDiameter._from_networkx(G=G)
 
     expected_edge_index = _sort_edge_index(expected_data.edge_index)
     got_edge_ind = _sort_edge_index(data.edge_index)
