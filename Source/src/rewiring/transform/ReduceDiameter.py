@@ -27,6 +27,10 @@ class ReduceDiameter(BaseTransform):
                 as beginning and end points."""
         
         super().__init__()
+
+        self._x = None
+        self._y = None
+
         assert not ((max_diam is None) and (min_density is None)), "Either the maximum diameter or a ratio to the amount of current edges must be specified!"
         if max_diam is not None:
             assert max_diam > 0, "Maximum diameter must be positive!"
@@ -67,6 +71,10 @@ class ReduceDiameter(BaseTransform):
         return self._from_networkx(G)
 
     def _to_networkx(self, data: Data):
+
+        # Keep unchanged fields from input data object
+        self._y = data.y
+        self._x = data.x
         
         if is_undirected(data.edge_index):
             G = nx.MultiGraph()
@@ -91,10 +99,15 @@ class ReduceDiameter(BaseTransform):
     
     def _from_networkx(self, G) -> Data:
 
-        nodeattr_dict = nx.get_node_attributes(G, 'attr')
-        list_of_lists = [[key] + value.tolist() for key, value in nodeattr_dict.items()]
+        if self._x is not None:
+            x = self._x
+        else:
+            nodeattr_dict = nx.get_node_attributes(G, 'attr')
+            list_of_lists = [[key] + value.tolist() for key, value in nodeattr_dict.items()]
+            x = torch.tensor(list_of_lists)
 
-        x = torch.tensor(list_of_lists)
+        
+
         edge_index = torch.transpose(torch.tensor(list(map(lambda x: (x[0], x[1]), G.edges))), 0, 1)
 
         edge_list = list(G.edges(data=True))
@@ -105,10 +118,15 @@ class ReduceDiameter(BaseTransform):
             edge_attrs = []
             for edge_attr_name in edge_attr_names:
                 edge_attrs.append(torch.tensor([G[u][v][edge_attr_name] for u, v, w in G.edges]))
-            data = Data(x=x, edge_index=edge_index, edge_attr=torch.stack(edge_attrs, dim=1))
+            if self._y is not None:
+                data = Data(x=x, edge_index=edge_index, edge_attr=torch.stack(edge_attrs, dim=1), y=self._y)
+            else:
+                data = Data(x=x, edge_index=edge_index, edge_attr=torch.stack(edge_attrs, dim=1))
         else:
-            data = Data(x=x, edge_index=edge_index)
-
+            if self._y is not None:
+                data = Data(x=x, edge_index=edge_index, y=self._y)
+            else:
+                data = Data(x=x, edge_index=edge_index)
         return data
 
     def _add_edge_shortest_path(self, G):

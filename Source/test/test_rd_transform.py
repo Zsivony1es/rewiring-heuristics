@@ -6,8 +6,8 @@ import networkx as nx
 import numpy as np
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
-log = logging.getLogger("RDTransformTest")
+# logging.basicConfig(level=logging.DEBUG)
+# log = logging.getLogger("RDTransformTest")
 
 
 def test_rd_to_networkx_conversion_undirected():
@@ -78,12 +78,13 @@ def test_rd_from_networkx_conversion_undirected():
 def test_rd_conversion_integration_cora():
     dataset = datasets.Planetoid(root='../res/datasets/cora_tf', name='Cora')
     expected_data = dataset.get(0)
-
     rd = ReduceDiameter(5)
+    
     G = rd._to_networkx(data=expected_data)
+
     data = rd._from_networkx(G=G)
 
-    log.info(f"data.x parameters: {data.x}\n{expected_data.x}")
+    print(f"data.x parameters: {data.x}\n{expected_data.x}")
 
     assert torch.all(torch.eq(data.x, expected_data.x)).item()
     assert torch.all(torch.eq(data.edge_index, expected_data.edge_index)).item()
