@@ -4,31 +4,18 @@ from torch_geometric.data.data import Data
 from torch_geometric import datasets
 import networkx as nx
 import numpy as np
-import logging
-
-# logging.basicConfig(level=logging.DEBUG)
-# log = logging.getLogger("RDTransformTest")
+import sys
 
 
-def _sort_edge_index(edge_index):
-    sorted_indices = torch.argsort(edge_index[0])
-    sorted_tensor = edge_index[:, sorted_indices]
+def _sort_edge_index(tensor):
+    if tensor.numel() == 0 or tensor.shape[0] != 2:
+        return tensor
 
-    repeated_indices = torch.where(sorted_tensor[0][1:] == sorted_tensor[0][:-1])[0]
-
-    # Check if there are repeated values
-    if repeated_indices.numel() > 0:
-        # Get start and end indices for each group of repeated values
-        start_indices = torch.cat((torch.tensor([0]), repeated_indices + 1))
-        end_indices = torch.cat((repeated_indices + 1, torch.tensor([sorted_tensor.shape[1]])))
-
-        # Sort the corresponding values in the second array within each group
-        for start, end in zip(start_indices, end_indices):
-            group_sorted_indices_second = torch.argsort(sorted_tensor[1, start:end])
-            sorted_tensor[:, start:end] = sorted_tensor[:, start:end][:, group_sorted_indices_second]
+    column_indices = list(range(tensor.shape[1]))
+    column_indices.sort(key=lambda col: (tensor[0, col], tensor[1, col]))
+    sorted_tensor = tensor[:, column_indices]
 
     return sorted_tensor
-
 
 def test_rd_is_multigraph():
     edge_index1 = torch.tensor([
@@ -43,7 +30,6 @@ def test_rd_is_multigraph():
     assert ReduceDiameter._is_multigraph(edge_index=edge_index1)
     assert ReduceDiameter._is_multigraph(data=data)
     assert not ReduceDiameter._is_multigraph(edge_index=edge_index2)
-
 
 def test_rd_to_networkx_conversion_undirected():
     edge_index = torch.tensor([[0, 1, 1, 2, 1, 3, 2, 4],
@@ -98,7 +84,6 @@ def test_rd_to_networkx_conversion_directed():
     assert torch.all(torch.eq(asd, x)).item()
     assert str(G.__class__) == "<class 'networkx.classes.digraph.DiGraph'>"
 
-
 def test_rd_from_networkx_conversion_undirected():
 
     nodes = 6
@@ -140,7 +125,6 @@ def test_rd_from_networkx_conversion_undirected():
     assert torch.all(torch.eq(data.edge_attr, expected_edge_attr)).item()
     assert str(G.__class__) == "<class 'networkx.classes.multigraph.MultiGraph'>"
     
-
 def test_rd_conversion_integration_cora():
 
     dataset = datasets.Planetoid(root='../res/datasets/cora_tf', name='Cora')
@@ -157,6 +141,7 @@ def test_rd_conversion_integration_cora():
     print(f"data.edge_index parameters:\nReceived:\n{got_edge_ind.tolist()}\nExpected:\n{expected_edge_index.tolist()}")
 
     assert torch.all(torch.eq(data.x, expected_data.x)).item()
+    assert data.edge_attr == expected_data.edge_attr # None
+    
     assert got_edge_ind.shape == expected_edge_index.shape
-    assert torch.all(torch.eq(got_edge_ind, expected_edge_index)).item(), f"data.edge_index parameters:\nReceived:\n{got_edge_ind.tolist()}\nExpected:\n{expected_edge_index.tolist()}"
-    assert torch.all(torch.eq(data.edge_attr, expected_data.edge_attr)).item()
+    assert torch.all(torch.eq(expected_edge_index, got_edge_ind)).item()
