@@ -97,7 +97,7 @@ class ReduceDiameter(BaseTransform):
 
         has_attr_field = any('attr' in data for u, v, data in G.edges(data=True))
         if has_attr_field:
-            edge_attr = torch.tensor([G.get_edge_data(u, v)['attr'] for u, v, _ in G.edges])
+            edge_attr = torch.tensor([G.get_edge_data(u, v)[0]['attr'] for u, v, _ in G.edges])
             data = Data(x=x, y=y, edge_index=edge_index, edge_attr=edge_attr, is_directed=G.is_directed())
         else:
             data = Data(x=x, y=y, edge_index=edge_index, is_directed=G.is_directed())

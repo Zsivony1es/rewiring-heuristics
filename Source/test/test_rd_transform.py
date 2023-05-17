@@ -107,7 +107,9 @@ def test_rd_from_networkx_conversion_undirected():
     for i in range(nodes):
         G.add_node(i, attr=id[i,:])
     edges_to_add = [(0, 1), (0, 4), (1, 3), (2, 3), (2, 4), (2, 5), (3, 5)]
-    G.add_edges_from(edges_to_add)
+    edge_attrs = [[0.1, 0.2], [0.3, 0.6], [0.7, 0.1], [1.0, 0.0], [0.1, 0.1], [0.4, 0.6], [0.7, 0.5]]
+    for i in range(len(edges_to_add)):
+        G.add_edge(*edges_to_add[i], attr=edge_attrs[i])
 
     expected_x = torch.tensor([
         [1., 0., 0., 0., 0., 0.],
@@ -118,8 +120,16 @@ def test_rd_from_networkx_conversion_undirected():
         [0., 0., 0., 0., 0., 1.]])
     
     expected_edge_index = torch.tensor([
-        [0, 0, 1, 2, 2, 2, 3],
-        [1, 4, 3, 3, 4, 5, 5]])
+        [0, 1, 0, 4, 1, 3, 2, 3, 2, 4, 2, 5, 3, 5],
+        [1, 0, 4, 0, 3, 1, 3, 2, 4, 2, 5, 2, 5, 3]])
+    
+    expected_edge_attr = torch.tensor([[0.1, 0.2], 
+                                       [0.3, 0.6], 
+                                       [0.7, 0.1], 
+                                       [1.0, 0.0], 
+                                       [0.1, 0.1], 
+                                       [0.4, 0.6], 
+                                       [0.7, 0.5]])
     
     rd = ReduceDiameter(max_diam=5)
     
@@ -127,6 +137,7 @@ def test_rd_from_networkx_conversion_undirected():
 
     assert torch.all(torch.eq(data.x, expected_x)).item()
     assert torch.all(torch.eq(data.edge_index, expected_edge_index)).item()
+    assert torch.all(torch.eq(data.edge_attr, expected_edge_attr)).item()
     assert str(G.__class__) == "<class 'networkx.classes.multigraph.MultiGraph'>"
     
 
@@ -147,5 +158,5 @@ def test_rd_conversion_integration_cora():
 
     assert torch.all(torch.eq(data.x, expected_data.x)).item()
     assert got_edge_ind.shape == expected_edge_index.shape
-    assert torch.all(torch.eq(got_edge_ind, expected_edge_index)).item()
+    assert torch.all(torch.eq(got_edge_ind, expected_edge_index)).item(), f"data.edge_index parameters:\nReceived:\n{got_edge_ind.tolist()}\nExpected:\n{expected_edge_index.tolist()}"
     assert torch.all(torch.eq(data.edge_attr, expected_data.edge_attr)).item()
