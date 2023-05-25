@@ -61,6 +61,32 @@ class GraphBuilder:
     def _generate_graph_label(self) -> None:
         self._y = [int(round(rn.random()))]
 
+    def _generate_last_feature(vectors: np.ndarray, node_index: int) -> float:
+        r"""Generate the last feature of a node
+        Args:
+            :obj:`vectors` (required) - A 2D :obj:`ndarray` object of shape [<num_node_features - 1>; <num_nodes>], 
+        where each column corresponds to all features of one node, except for the last one.
+            :obj:`node_index` (required) - The index of the node for which the last feature should be calcualted.
+            
+        Returns: The last feature of node at index :obj:`node_index`"""
+        num_nodes = vectors.shape[1]
+        num_dimensions = vectors.shape[0] + 1
+
+        # Extract the three features of the current node
+        node_features = vectors[:, node_index]
+
+        # Compute the last feature based on the first three features of all nodes
+        last_feature = 0.0
+        for i in range(num_nodes):
+            if i != node_index:
+                node_i_features = vectors[:, i]
+                for j in range(num_dimensions - 1):
+                    component = node_features[j] + node_i_features[j]
+                    exponential = np.exp(component)
+                    last_feature += np.sin(exponential)
+
+        return last_feature
+
     def build(self) -> Data:
         """Returns the graph as an instance of :obj:`torch_geometric.data.Data`."""
         

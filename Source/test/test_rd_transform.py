@@ -4,7 +4,6 @@ from torch_geometric.data.data import Data
 from torch_geometric import datasets
 import networkx as nx
 import numpy as np
-import sys
 
 
 def _sort_edge_index(tensor):
