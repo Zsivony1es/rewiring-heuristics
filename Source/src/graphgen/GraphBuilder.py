@@ -25,6 +25,11 @@ class GraphBuilder:
         self._get_base_graph(directed=self._conf['directed'], multiple_edges=self._conf['multiple_edges'])
         self._generate_nodes(node_count=self._conf['node_count'], 
                              node_feature_dim=self._conf['node_feature_dim'])
+        
+        # If density is set, then it is used as default option to set the number of edges
+        if 'density' in self._conf:
+            self._conf['edge_count'] = self._conf['density'] * ((self._conf['node_count'] * (self._conf['node_count'] - 1)) / 2)
+
         self._generate_edges(node_count=self._conf['node_count'], 
                              edge_count=self._conf['edge_count'], 
                              edge_feature_dim=self._conf['edge_feature_dim'], 

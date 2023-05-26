@@ -17,7 +17,13 @@ from torch_geometric.transforms import BaseTransform
 from utils import get_rewiring_full_name
 
 class PipelineController():
-
+    r"""This class is the main driver for training and evaluating models. For each dataset a different model will be created!
+    Args:
+        datasets (required) - List of all datasets on which the model should be trained and evaluated.
+        model_abbr (required) - Set the GNN model to train. Options: [GCN, GAT, GIN]
+        loss_function - Any loss function from PyTorch. (default: torch.nn.NLLLoss())
+        """
+    
     def __init__(self, datasets: list[Dataset | InMemoryDataset], model_abbr: str, loss_function: Any = torch.nn.NLLLoss()) -> None:
         self._logger = logging.getLogger(__name__)
         self._plot_generator = PlotGenerator()
@@ -51,19 +57,40 @@ class PipelineController():
             return opt
 
     def train(self, dataset_index: int) -> None:
-        print(f"Beginning model training for {self._datasets[dataset_index].name}")
+        r"""Train the model corresponding to the specified dataset.
+        Args:
+            dataset_index (required) - The index in the list of datasets provided during initialization
+                of the dataset you want to use for training"""
+        
+        used_dataset = self._datasets[dataset_index]
+        print(f"Beginning model training for {used_dataset.name}")
         self._models[dataset_index].train()
-        for epoch in range(200):
-            if (epoch + 1) % 25 == 0:
-                print(f"Running epoch {epoch + 1}/200")
+
+        for epoch in range(1, 201):
+            if epoch % 25 == 0:
+                print(f"Running epoch {epoch}/200")
+
             self._optimizers[dataset_index].zero_grad()
-            out = self._models[dataset_index](self._datasets[dataset_index].x, self._datasets[dataset_index].edge_index)
-            loss = self._loss_function( out[self._datasets[dataset_index].train_mask], self._datasets[dataset_index].y[self._datasets[dataset_index].train_mask])
+
+            out = self._models[dataset_index](
+                used_dataset.x,
+                used_dataset.edge_index)
+            
+            print(self._loss_function)
+            loss = self._loss_function( 
+                out[used_dataset.train_mask], 
+                used_dataset.y[used_dataset.train_mask])
+            
             loss.backward()
             self._optimizers[dataset_index].step()
-        print(f"Model training of {self._datasets[dataset_index].name} finished!")
+        print(f"Model training of {used_dataset.name} finished!")
 
     def eval(self, dataset_index: int) -> None:
+        r"""Evaluate the model corresponding to the specified dataset.
+        Args:
+            dataset_index (required) - The index in the list of datasets provided during initialization
+                of the dataset you want to use for evaluation"""
+        
         self._models[dataset_index].eval()
         _, pred = self._models[dataset_index](self._datasets[dataset_index].x, self._datasets[dataset_index].edge_index).max(dim=1)
         correct = float(pred[self._datasets[dataset_index].test_mask].eq(self._datasets[dataset_index].y[self._datasets[dataset_index].test_mask]).sum().item())
@@ -72,9 +99,11 @@ class PipelineController():
         print(f'Accuracy ({self._datasets[dataset_index].name}): {acc}')
 
     def train_all(self) -> None:
+        r"""Train the models with all datasets."""
         for dataset_index in range(len(self._datasets)):
             self.train(dataset_index)
 
     def eval_all(self) -> None:
+        r"""Evaluate the models on all datasets."""
         for dataset_index in range(len(self._datasets)):
             self.eval(dataset_index)
