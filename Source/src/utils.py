@@ -32,10 +32,10 @@ class Utils:
         dsets = {}
         for dset in using_datasets:
             match dset.lower().strip():
-                case 'cora': dset['cora'] = datasets.Planetoid(root=f'{dset_base}/cora_tf', name='Cora', transform=rewiring)
-                case 'enzymes': dset['enzymes'] = datasets.TUDataset(root=f'{dset_base}/enzymes', name='ENZYMES', transform=rewiring)
-                case 'amazon': dset['amazon'] = datasets.AmazonProducts(root=f'{dset_base}/amazonprods', transform=rewiring)
-                case 'ppi': dset['ppi'] = datasets.PPI(root=f'{dset_base}/ppi', transform=rewiring)
+                case 'cora': dsets['cora'] = datasets.Planetoid(root=f'{dset_base}/cora_tf', name='Cora', transform=rewiring)
+                case 'enzymes': dsets['enzymes'] = datasets.TUDataset(root=f'{dset_base}/enzymes', name='ENZYMES', transform=rewiring)
+                case 'amazon': dsets['amazon'] = datasets.AmazonProducts(root=f'{dset_base}/amazonprods', transform=rewiring)
+                case 'ppi': dsets['ppi'] = datasets.PPI(root=f'{dset_base}/ppi', transform=rewiring)
                 case _: raise ValueError(f'Invalid dataset setting: {dset}')
         print(f"Loading datasets DONE!")
         return dsets

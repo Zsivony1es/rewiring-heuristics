@@ -29,7 +29,7 @@ class PipelineController():
     def _init_models(self, model_abbr: str) -> list[torch.nn.Module]:
         self._logger.info(f"Creating models with loaded datasets...")
         model_dict = {}
-        for key, dset in self._datasets:
+        for key, dset in self._datasets.items():
             match model_abbr:
                 case 'GAT': model_dict[key] = GAT(dset.num_features, 256, dset.num_classes)
                 case 'GIN': model_dict[key] = GIN(dset.num_features, dset.num_classes)
@@ -42,7 +42,7 @@ class PipelineController():
         opt = {}
         self._logger.info(f"Creating optimizers...")
         self._logger.debug(f"self._models: {self._models}")
-        for key, model in self._models:
+        for key, model in self._models.items():
             opt[key] = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=5e-4)
         self._logger.info(f"Creating optimizers DONE!")
         return opt
@@ -67,7 +67,6 @@ class PipelineController():
                 used_dataset.x,
                 used_dataset.edge_index)
             
-            print(self._loss_function)
             loss = self._loss_function( 
                 out[used_dataset.train_mask], 
                 used_dataset.y[used_dataset.train_mask])
@@ -93,10 +92,10 @@ class PipelineController():
 
     def train_all(self) -> None:
         r"""Train the models with all datasets."""
-        for dataset_index in range(len(self._datasets)):
-            self.train(dataset_index)
+        for key, _ in self._datasets.items():
+            self.train(key)
 
     def eval_all(self) -> None:
         r"""Evaluate the models on all datasets."""
-        for dataset_index in range(len(self._datasets)):
-            self.eval(dataset_index)
+        for key, _ in self._datasets.items():
+            self.eval(key)

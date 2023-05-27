@@ -23,7 +23,7 @@ parser.add_argument('--generate_plots', action='store_true', help='Set to output
 cfg = parser.parse_args()
 
 util = Utils()
-print(f'Parsed arguments:\n  Model type:\t\t {cfg.model_type}\n  Used datasets:\t\t {cfg.dataset_list}\n  Rewiring strategy:\t {util.get_rewiring_full_name(cfg.rewiring)}\n  generate_plots:\t {cfg.generate_plots}')
+print(f'Parsed arguments:\n  Model type:\t\t {cfg.model_type}\n  Used datasets:\t {cfg.dataset_list}\n  Rewiring strategy:\t {util.get_rewiring_full_name(cfg.rewiring)}\n  generate_plots:\t {cfg.generate_plots}')
 
 ### Define transformation
 rewiring_options = {
@@ -35,7 +35,7 @@ rewiring_options = {
 rewiring = rewiring_options.get(cfg.rewiring, ValueError(f'Invalid rewiring setting: {cfg.rewiring}'))
 
 ### Load datasets
-datasets = util.get_dataset_dictionary(dset_list=cfg.dataset_list, rewiring=rewiring)
+datasets = util.get_dataset_dictionary(dset_conf=cfg.dataset_list, rewiring=rewiring)
 
 ### Initialize pipeline
 controller = PipelineController(
