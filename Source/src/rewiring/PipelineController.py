@@ -17,12 +17,13 @@ class PipelineController():
         loss_function - Any loss function from PyTorch. (default: torch.nn.NLLLoss())
         """
     
-    def __init__(self, datasets: dict, model_abbr: str, loss_function: Any = torch.nn.NLLLoss()) -> None:
+    def __init__(self, datasets: dict, model_abbr: str, epochs: int, loss_function: Any = torch.nn.NLLLoss()) -> None:
         self._logger = logging.getLogger(__name__)
         self._plot_generator = PlotGenerator()
         self._datasets = datasets
         self._models = self._init_models(model_abbr)
         self._optimizers = self._init_optimizers()
+        self._epochs = epochs
         self._loss_function = loss_function
         pass
 
@@ -57,9 +58,9 @@ class PipelineController():
         print(f"Beginning model training for {used_dataset.name}")
         self._models[dataset_name].train()
 
-        for epoch in range(1, 201):
+        for epoch in range(1, self._epochs + 1):
             if epoch % 25 == 0:
-                print(f"Running epoch {epoch}/200")
+                print(f"Running epoch {epoch}/{self._epochs}")
 
             self._optimizers[dataset_name].zero_grad()
 

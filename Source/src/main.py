@@ -19,11 +19,14 @@ parser.add_argument('--dataset_list', required=True, type=str, help="""List of d
                     \nAvailable options: cora, enzymes, amazon, ppi""")
 parser.add_argument('--model_type', required=True, type=str, choices=['GCN', 'GIN', 'GAT'], help='Options: GCN, GIN, GAT')
 parser.add_argument('--rewiring', required=False, type=str, choices=['ARE', 'RD', 'DW'], help='Options: ARE = AddRandomEdges, RD = ReduceDiameter, DW = DiffWire')
+parser.add_argument('--epochs', required=False, type=int, default=300, help='Set the amount of epochs each training cycle should include. Defaults to 300')
 parser.add_argument('--generate_plots', action='store_true', help='Set to output graph images to Source/out')
 cfg = parser.parse_args()
 
 util = Utils()
-print(f'Parsed arguments:\n  Model type:\t\t {cfg.model_type}\n  Used datasets:\t {cfg.dataset_list}\n  Rewiring strategy:\t {util.get_rewiring_full_name(cfg.rewiring)}\n  generate_plots:\t {cfg.generate_plots}')
+print(f"""Parsed arguments:\n  Model type:\t\t {cfg.model_type}\n  Used datasets:\t {cfg.dataset_list}\n  
+        Rewiring strategy:\t {util.get_rewiring_full_name(cfg.rewiring)}\n Epochs:\t\t {cfg.epochs}\n 
+        generate_plots:\t {cfg.generate_plots}""")
 
 ### Define transformation
 rewiring_options = {
@@ -41,7 +44,8 @@ datasets = util.get_dataset_dictionary(dset_conf=cfg.dataset_list, rewiring=rewi
 controller = PipelineController(
     datasets=datasets,
     model_abbr=cfg.model_type,
-    loss_function=torch.nn.NLLLoss()
+    loss_function=torch.nn.NLLLoss(),
+    epochs = cfg.epochs
 )
 
 controller.train_all()
