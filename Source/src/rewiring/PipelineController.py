@@ -1,12 +1,17 @@
 import torch
+import numpy as np
 import logging
 from typing import Any
+from math import floor
+
+from torch_geometric.data import Dataset, InMemoryDataset
 
 from rewiring.model.GAT import GAT
 from rewiring.model.GCN import GCN
 from rewiring.model.GIN import GIN
 
 from rewiring.PlotGenerator import PlotGenerator
+
 
 
 class PipelineController():
@@ -49,42 +54,77 @@ class PipelineController():
         return opt
 
 
-    def train(self, dataset_name: str) -> None:
+    def train(self, dataset_name: str) -> tuple[list[float], list[float]]:
         r"""Train the model corresponding to the specified dataset.
         Args:
-            dataset_name (required) - The name of the dataset for which a model should be trained."""
+            dataset_name (required) - The name of the dataset for which the corresponding model should be trained.
+        Returns: 
+            A tuple of two lists containing the loss measured in each epoch on the training and the validation set respectively, 
+            so with 100 epochs, each list should be 100 in length."""
         
-        used_dataset = self._datasets[dataset_name]
-        print(f"Beginning model training for {used_dataset.name}")
-        self._models[dataset_name].train()
+        dset: Dataset | InMemoryDataset = self._datasets[dataset_name]
+        model = self._models[dataset_name]
+        print(f"Beginning model training for {dset.name}")
+
+        # Divide the dataset into training and validation sets
+        training_graph_count = floor(0.85 * len(dset))
+        all_indices = np.arange(len(dset))
+        training_indices = np.random.choice(all_indices, size=training_graph_count, replace=False)
+        validation_indices = np.setdiff1d(all_indices, training_indices)
+
+        train_dset = dset.index_select(training_indices)
+        val_dset = dset.index_select(validation_indices)
+
+        train_losses = []
+        val_losses = []
 
         for epoch in range(1, self._epochs + 1):
-            if epoch % 25 == 0:
-                print(f"Running epoch {epoch}/{self._epochs}")
-
+            ### TRAINING   
+            model.train()         
+            # Clear the gradients
             self._optimizers[dataset_name].zero_grad()
 
-            out = self._models[dataset_name](
-                used_dataset.x,
-                used_dataset.edge_index)
+            # Forward Pass
+            out = model(train_dset.x, train_dset.edge_index)
             
-            loss = self._loss_function( 
-                out[used_dataset.train_mask], 
-                used_dataset.y[used_dataset.train_mask])
+            # Find the Loss
+            train_loss = self._loss_function( 
+                out[train_dset.train_mask], 
+                train_dset.y[train_dset.train_mask])
+            train_losses.append(train_loss.item())
+
+            # Calculate gradients
+            train_loss.backward()
             
-            loss.backward()
+            # Update Weights
             self._optimizers[dataset_name].step()
-        print(f"Model training of {used_dataset.name} finished!")
+
+            ### VALIDATION
+            model.eval()
+            # Forward pass
+            out = model(val_dset.x, val_dset.edge_index)
+            # Find the loss
+            val_loss = self._loss_function(
+                out[val_dset.train_mask], 
+                val_dset.y[val_dset.train_mask])
+            val_losses.append(val_loss.item())
+
+            if epoch % 25 == 0:
+                print(f'Epoch [{epoch}/{self._epochs}]\t Loss: {val_loss.item():.4f}')
+
+        print(f"Model training of {dset.name} finished!")
+        return (train_losses, val_losses)
+
 
     def eval(self, dataset_name: str) -> None:
         r"""Evaluate the model corresponding to the specified dataset.
         Args:
-            dataset_name (required) - The name of the dataset for which a model should be evaluated."""
+            dataset_name (required) - The name of the dataset for which the corresponding model should be evaluated."""
         
         model = self._models[dataset_name]
         dset = self._datasets[dataset_name]
         
-        self._models[dataset_name].eval()
+        model.eval()
         _, pred = model(dset.x, dset.edge_index).max(dim=1)
         correct = float(pred[dset.test_mask].eq(dset.y[dset.test_mask]).sum().item())
         acc = correct / dset.test_mask.sum().item()
