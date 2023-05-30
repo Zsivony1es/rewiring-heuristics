@@ -15,7 +15,7 @@ class ReduceDiameter(BaseTransform):
 
     # input: maximum diameter or percentage of edges added
 
-    def __init__(self, max_diam: Optional[int] = None, min_density: Optional[float] = None, allow_self_loops: bool = False) -> None:
+    def __init__(self, max_diam: Optional[int] = None, min_density: Optional[float] = None) -> None:
         r"""Initialize the transformation.
         Args:
             max_diam (int, optional): Continues adding edges into the graph, until the graph diameter is reduced to 
@@ -69,7 +69,7 @@ class ReduceDiameter(BaseTransform):
 
         return self._from_networkx(G)
 
-    def _from_networkx(self, G):
+    def _from_networkx(self, G) -> Data:
         """Converts a NetworkX graph into a :obj:`torch_geometric.data.data.Data` object."""
 
         if self._x is not None:

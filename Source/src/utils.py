@@ -6,11 +6,11 @@ class Utils:
         self._log = logging.getLogger(__name__)
 
     def get_rewiring_full_name(self, abbr: str) -> str:
-        rew_names = ['AddRandomEdges', 'ReduceDiameter', 'DiffWire', 'None']
+        rew_names = ['AddRandomEdges', 'ReduceDiameter', 'GraphDiffusionConvolution', 'None']
         match abbr:
             case 'ARE': return rew_names[0]
             case 'RD': return rew_names[1]
-            case 'DW': return rew_names[2]
+            case 'GDC': return rew_names[2]
             case None: return rew_names[3]
             case _: raise ValueError(f'Invalid abbreviation: {abbr}')
 
