@@ -49,5 +49,11 @@ controller = PipelineController(
     generate_plots = cfg.generate_plots,
 )
 
-controller.train_all()
-controller.eval_all()
+train_loss, val_loss = controller.train_test_dataset('cora')
+
+if controller._plot_generator is not None:
+    controller._plot_generator.generate_loss_plot(
+        train_loss=train_loss,
+        val_loss=val_loss,
+        dset_name='Cora',
+        model_type=cfg.model_type)

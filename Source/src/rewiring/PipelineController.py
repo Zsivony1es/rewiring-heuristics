@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 import numpy as np
 import logging
 from typing import Any
@@ -35,6 +36,7 @@ class PipelineController():
         self._model_used = model_abbr
         self._models = self._init_models(model_abbr)
         self._optimizers = self._init_optimizers()
+        self._criterion = nn.CrossEntropyLoss()
         self._epochs = epochs
         self._loss_function = loss_function
         pass
@@ -60,8 +62,59 @@ class PipelineController():
         self._logger.info(f"Creating optimizers DONE!")
         return opt
 
+    def _train(model: nn.Module, 
+              data: Dataset | InMemoryDataset, 
+              optimizer, 
+              criterion, 
+              num_epochs: int,
+              train_mask: torch.Tensor, 
+              val_mask: torch.Tensor = None) -> tuple[list[float], list[float]]:
+        
+        train_losses = []
+        val_losses = []
 
-    def train(self, dataset_name: str) -> tuple[list[float], list[float]]:
+        model.train()
+        for epoch in range(num_epochs):
+            
+            ### TRAINING
+            # Clear the gradients
+            optimizer.zero_grad()
+            # Forward Pass
+            out = model(data.x, data.edge_index)
+            # Find the Loss
+            train_loss = criterion(out[train_mask], data.y[train_mask])
+            train_losses.append(train_loss.item())
+            
+            # Calculate gradients
+            train_loss.backward()
+
+            # Update Weights
+            optimizer.step()
+
+            if val_mask is None:
+                if epoch % 10 == 0:
+                    print(f"""Epoch: [{epoch+1}/{num_epochs}]
+                      Training loss: {train_loss.item():.4f}""")
+                continue
+
+            ### VALIDATION
+            model.eval()
+            with torch.no_grad():
+                out = model(data.x, data.edge_index)
+                val_loss = criterion(out[val_mask], data.y[val_mask])
+                val_losses.append(val_loss.item())
+                _, pred = out.max(dim=1)
+                correct = int(pred[val_mask].eq(data.y[val_mask]).sum().item())
+                acc = correct / val_mask.sum().item()
+            
+            if epoch % 10 == 0:
+                print(f"""Epoch: [{epoch+1}/{num_epochs}]
+                  Training loss: {train_loss.item():.4f},\t Validation loss: {val_loss.item():.4f}
+                  Accuracy: {acc}""")
+
+        return (train_losses, val_losses)
+        
+    def train_test_dataset(self, dataset_name: str) -> tuple[list[float], list[float]]:
         r"""Train the model corresponding to the specified dataset.
         Args:
             dataset_name (required) - The name of the dataset for which the corresponding model should be trained.
@@ -70,72 +123,56 @@ class PipelineController():
             so with 100 epochs, each list should be 100 in length."""
         
         dset: Dataset | InMemoryDataset = self._datasets[dataset_name]
+        if dataset_name == 'cora':
+            dset = dset[0]
         model = self._models[dataset_name]
-        print(f"Beginning model training for {dset.name}")
+        optimizer = self._optimizers[dataset_name]
+        print(f"Beginning model training for {dataset_name}")
 
-        # Divide the dataset into training and validation sets
-        training_graph_count = floor(0.85 * len(dset))
-        all_indices = np.arange(len(dset))
-        training_indices = np.random.choice(all_indices, size=training_graph_count, replace=False)
-        validation_indices = np.setdiff1d(all_indices, training_indices)
+        # Divide the dataset into training, validation and test sets
+        train_mask, test_mask = train_test_split(range(dset.num_nodes), test_size=0.2)
+        train_mask, val_mask = train_test_split(train_mask, test_size=0.2)
 
-        train_dset = dset.index_select(training_indices)
-        val_dset = dset.index_select(validation_indices)
+        train_mask = torch.tensor(train_mask)
+        test_mask = torch.tensor(test_mask)
+        val_mask = torch.tensor(val_mask)
 
-        train_loader = DataLoader(train_dset, batch_size=64, shuffle=True)
-        val_loader = DataLoader(val_dset, batch_size=64, shuffle=False)
+        train_loss, val_loss = PipelineController._train(
+            model=model,
+            data=dset,
+            optimizer=optimizer,
+            criterion=self._criterion,
+            num_epochs=self._epochs,
+            train_mask=train_mask,
+            val_mask=val_mask)
+        print(f"Model training of {dataset_name} finished!")
+        print(f"Evaluating {dataset_name} on test set...")
+        loss, acc = self._evaluate(
+            model=model, 
+            data=dset, 
+            test_mask=test_mask, 
+            criterion=self._criterion)
+        
+        print(f"""  Test loss: {loss:.4f}
+          Accuracy: {acc}""")
 
-        train_losses = []
-        val_losses = []
-
-        for epoch in range(1, self._epochs + 1):
-            ### TRAINING   
-            model.train()
-            step_loss = []
-            for batch in train_loader:
-                data = batch.to(self._device)     
-                # Clear the gradients
-                self._optimizers[dataset_name].zero_grad()
-
-                # Forward Pass
-                out = model(data)
-                
-                # Find the Loss
-                train_loss = self._loss_function( 
-                    out[train_dset.train_mask], 
-                    train_dset.y[train_dset.train_mask])
-                step_loss.append(val_loss.item())
-
-                # Calculate gradients
-                train_loss.backward()
-                
-                # Update Weights
-                self._optimizers[dataset_name].step()
-
-            train_losses.append(np.array(step_loss).mean())
-
-            ### VALIDATION
-            model.eval()
-            step_loss = []
-            with torch.no_grad():
-                for batch in val_loader:
-                    data = batch.to(self._device)
-                    # Forward pass
-                    out = model(data)
-                    # Find the loss
-                    val_loss = self._loss_function(
-                        out[val_dset.train_mask], 
-                        val_dset.y[val_dset.train_mask])
-                    step_loss.append(val_loss.item())
-
-            val_losses.append(np.array(step_loss).mean())
-
-            if epoch % 25 == 0:
-                print(f'Epoch [{epoch}/{self._epochs}]\t Loss: {val_loss.item():.4f}')
-
-        print(f"Model training of {dset.name} finished!")
-        return (train_losses, val_losses)
-
+        return (train_loss, val_loss)
+    
+    def _evaluate(model: nn.Module, 
+                  data: Dataset | InMemoryDataset, 
+                  test_mask: torch.Tensor,
+                  criterion):
+        
+        model.eval()
+        with torch.no_grad():
+            logits = model(data.x, data.edge_index)
+            loss = criterion(logits[test_mask], data.y[test_mask])
+            _, pred = logits.max(dim=1)
+            correct = int(pred[test_mask].eq(data.y[test_mask]).sum().item())
+            acc = correct / test_mask.sum().item()
+        
+        return (loss.item(), acc) 
+    
 
     def eval(self, dataset_name: str) -> None:
         r"""Evaluate the model corresponding to the specified dataset.
@@ -155,7 +192,7 @@ class PipelineController():
     def train_all(self) -> None:
         r"""Train the models with all datasets."""
         for key, _ in self._datasets.items():
-            (train_loss, val_loss) = self.train(key)
+            (train_loss, val_loss) = self.train_dataset(dataset_name=key)
             if self._plot_generator is not None:
                 self._plot_generator.generate_loss_plot(
                     train_loss=train_loss,
