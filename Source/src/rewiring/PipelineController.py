@@ -92,7 +92,7 @@ class PipelineController():
             optimizer.step()
 
             if val_mask is None:
-                if epoch % 10 == 0:
+                if (epoch + 1) % 10 == 0:
                     print(f"""Epoch: [{epoch+1}/{num_epochs}]
                       Training loss: {train_loss.item():.4f}""")
                 continue
@@ -107,7 +107,7 @@ class PipelineController():
                 correct = int(pred[val_mask].eq(data.y[val_mask]).sum().item())
                 acc = correct / val_mask.sum().item()
             
-            if epoch % 10 == 0:
+            if (epoch + 1) % 10 == 0:
                 print(f"""Epoch: [{epoch+1}/{num_epochs}]
                   Training loss: {train_loss.item():.4f},\t Validation loss: {val_loss.item():.4f}
                   Accuracy: {acc}""")
@@ -147,7 +147,7 @@ class PipelineController():
             val_mask=val_mask)
         print(f"Model training of {dataset_name} finished!")
         print(f"Evaluating {dataset_name} on test set...")
-        loss, acc = self._evaluate(
+        loss, acc = PipelineController._evaluate(
             model=model, 
             data=dset, 
             test_mask=test_mask, 
