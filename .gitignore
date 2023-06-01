@@ -1,6 +1,7 @@
 /Model/*.lck
 /Model/*.bak_*
 /Source/res/*
+/Source/out/plots/*
 !/Source/res/dset1
 !/Source/res/dset2
 /.vscode

@@ -130,6 +130,7 @@ class PipelineController():
         print(f"Beginning model training for {dataset_name}")
 
         # Divide the dataset into training, validation and test sets
+        print(f"Numnodes: {dset.num_nodes}")
         train_mask, test_mask = train_test_split(range(dset.num_nodes), test_size=0.2)
         train_mask, val_mask = train_test_split(train_mask, test_size=0.2)
 
@@ -165,9 +166,9 @@ class PipelineController():
         
         model.eval()
         with torch.no_grad():
-            logits = model(data.x, data.edge_index)
-            loss = criterion(logits[test_mask], data.y[test_mask])
-            _, pred = logits.max(dim=1)
+            out = model(data.x, data.edge_index)
+            loss = criterion(out[test_mask], data.y[test_mask])
+            _, pred = out.max(dim=1)
             correct = int(pred[test_mask].eq(data.y[test_mask]).sum().item())
             acc = correct / test_mask.sum().item()
         
