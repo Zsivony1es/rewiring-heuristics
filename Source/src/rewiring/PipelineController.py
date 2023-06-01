@@ -6,14 +6,13 @@ from typing import Any
 from math import floor
 
 from torch_geometric.data import Dataset, InMemoryDataset
-from torch_geometric.loader import DataLoader
-from sklearn.model_selection import train_test_split
 
 from rewiring.model.GAT import GAT
 from rewiring.model.GCN import GCN
 from rewiring.model.GIN import GIN
 
 from rewiring.PlotGenerator import PlotGenerator
+from rewiring.TrainValTestSplitter import TrainValTestSplitter
 
 
 
@@ -36,7 +35,6 @@ class PipelineController():
         self._model_used = model_abbr
         self._models = self._init_models(model_abbr)
         self._optimizers = self._init_optimizers()
-        self._criterion = nn.CrossEntropyLoss()
         self._epochs = epochs
         self._loss_function = loss_function
         pass
@@ -131,18 +129,13 @@ class PipelineController():
 
         # Divide the dataset into training, validation and test sets
         print(f"Numnodes: {dset.num_nodes}")
-        train_mask, test_mask = train_test_split(range(dset.num_nodes), test_size=0.2)
-        train_mask, val_mask = train_test_split(train_mask, test_size=0.2)
-
-        train_mask = torch.tensor(train_mask)
-        test_mask = torch.tensor(test_mask)
-        val_mask = torch.tensor(val_mask)
+        train_mask, val_mask, test_mask = TrainValTestSplitter.split(dataset_name='cora', dataset=dset)
 
         train_loss, val_loss = PipelineController._train(
             model=model,
             data=dset,
             optimizer=optimizer,
-            criterion=self._criterion,
+            criterion=self._loss_function,
             num_epochs=self._epochs,
             train_mask=train_mask,
             val_mask=val_mask)
@@ -152,7 +145,7 @@ class PipelineController():
             model=model, 
             data=dset, 
             test_mask=test_mask, 
-            criterion=self._criterion)
+            criterion=self._loss_function)
         
         print(f"""  Test loss: {loss:.4f}
           Accuracy: {acc}""")
