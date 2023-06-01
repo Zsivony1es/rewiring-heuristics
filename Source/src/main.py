@@ -5,10 +5,11 @@ from torch_geometric.transforms import GDC
 from rewiring.transform.AddRandomEdges import AddRandomEdges
 from rewiring.transform.ReduceDiameter import ReduceDiameter
 from rewiring.PipelineController import PipelineController
+from rewiring.PlotGenerator import PlotGenerator
 from utils import Utils
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 ### Parse arguments
@@ -51,8 +52,8 @@ controller = PipelineController(
 
 train_loss, val_loss = controller.train_test_dataset('cora')
 
-if controller._plot_generator is not None:
-    controller._plot_generator.generate_loss_plot(
+pg = PlotGenerator()
+pg.generate_loss_plot(
         train_loss=train_loss,
         val_loss=val_loss,
         dset_name='Cora',
