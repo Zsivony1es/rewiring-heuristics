@@ -11,8 +11,14 @@ class TrainValTestSplitter:
         pass
 
     def split(dataset_name: str, dataset: Dataset | InMemoryDataset) -> tuple[Tensor, Tensor, Tensor]:
-        match dataset_name:
+        match dataset_name.lower():
+            case 'cora': train_mask, val_mask, test_mask = TrainValTestSplitter._cora_split(dataset)
             case _: train_mask, val_mask, test_mask = TrainValTestSplitter._default_split(dataset)
+        return (train_mask, val_mask, test_mask)
+    
+    def _cora_split(dset: InMemoryDataset):
+        train_mask, val_mask = train_test_split(dset.y, test_size=0.1, stratify=dset.y)
+        test_mask = torch.ones(dset.num_nodes, dtype=bool)
         return (train_mask, val_mask, test_mask)
 
     def _default_split(dset: Dataset | InMemoryDataset) -> tuple[Tensor, Tensor, Tensor]:
