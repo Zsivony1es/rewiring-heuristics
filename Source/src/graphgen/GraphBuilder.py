@@ -43,11 +43,13 @@ class GraphBuilder:
                              multiple_edges=self._conf['multiple_edges'])
         
         if self._conf['train_goal'] == 'node':
-            self._generate_node_labels(node_count=self._conf['node_count'])
+            self._generate_node_labels(x=self._x)
         elif self._conf['train_goal'] == 'graph':
             raise NotImplementedError('Graph labeling is not implemented yet, choose "node" option for now...')
         else:
             raise RuntimeError(f'Invalid configuration value for "train_goal" - {self._conf["train_goal"]}\nValid options: node, graph')
+        
+        return
         
     def _generate_nodes(node_count: int,
                         node_feature_dim: int) -> np.ndarray:
@@ -59,6 +61,7 @@ class GraphBuilder:
         """Add nodes to the graph based on a 2D NumPy array supplied, where each row corresponds to the features of a single node in the graph."""
         for node_ind in range(node_feature_list.shape[0]):
             self._G.add_node(node_ind, attr=node_feature_list[node_ind].tolist())
+        return
 
     def _generate_edges(self, node_count: int, edge_count: int, edge_feature_dim: int, loop_edges: bool, multiple_edges: bool) -> None:
         """Generate :obj:`edge_count` number of edges, each one with :obj:`edge_feature_dim` attributes."""
@@ -72,10 +75,20 @@ class GraphBuilder:
                 attr=(np.random.rand(edge_feature_dim) * 10000).tolist()
                 )
             added_edges += 1
+        return
 
-    def _generate_node_labels(self) -> None:
-        self._y = 1 # TODO
-        pass
+    def _generate_node_labels(self, x: np.ndarray) -> None:
+        r"""Generates the node label for all nodes in the graph."""
+
+        labels = []
+        for node_index in range(self._conf['node_count']):
+            label = GraphBuilder._generate_node_label(
+                vectors=x,
+                node_index=node_index)
+            labels.append(label)
+
+        self._y = torch.tensor(labels)
+        return
 
     def _generate_node_label(vectors: np.ndarray, node_index: int) -> float:
         r"""Generate the label of a node
@@ -112,10 +125,11 @@ class GraphBuilder:
         # couldn't get torch_geometric.utils.from_networkx() working
         edges = [(edge[0], edge[1]) for edge in self._G.edges]
         edge_index = torch.tensor(edges).t().contiguous()
-        num_nodes = self._G.number_of_nodes()
-        x = torch.tensor([self._G.nodes[node]['attr'] for node in range(num_nodes)])
         edge_attr = torch.tensor([self._G.edges[edge]['attr'] for edge in self._G.edges])
-        ret_val = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=self._y)
+
+        num_nodes = self._G.number_of_nodes()
+
+        ret_val = Data(x=self._x, edge_index=edge_index, edge_attr=edge_attr, y=self._y)
 
         assert ret_val.x.shape[0] == num_nodes
         assert ret_val.x.shape[1] == len(self._G.nodes[0]['attr'])
