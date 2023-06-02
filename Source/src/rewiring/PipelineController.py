@@ -15,7 +15,7 @@ from rewiring.PlotGenerator import PlotGenerator
 from rewiring.TrainValTestSplitter import TrainValTestSplitter
 
 
-
+log = logging.getLogger(__name__)
 class PipelineController():
     r"""This class is the main driver for training and evaluating models. For each dataset a different model will be created!
     Args:
@@ -25,7 +25,6 @@ class PipelineController():
         """
     
     def __init__(self, datasets: dict, model_abbr: str, epochs: int, generate_plots, loss_function: Any = torch.nn.NLLLoss()) -> None:
-        self._logger = logging.getLogger(__name__)
         self._device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if generate_plots:
             self._plot_generator = PlotGenerator()
@@ -40,7 +39,7 @@ class PipelineController():
         pass
 
     def _init_models(self, model_abbr: str) -> list[torch.nn.Module]:
-        self._logger.info(f"Creating models with loaded datasets...")
+        log.info(f"Creating models with loaded datasets...")
         model_dict = {}
         for key, dset in self._datasets.items():
             match model_abbr:
@@ -48,16 +47,16 @@ class PipelineController():
                 case 'GIN': model_dict[key] = GIN(dset.num_features, dset.num_classes)
                 case 'GCN': model_dict[key] = GCN(dset.num_features, dset.num_classes)
                 case _: raise ValueError(f'Invalid model setting: {model_abbr}')
-        self._logger.info(f"Creating models DONE!")
+        log.info(f"Creating models DONE!")
         return model_dict
             
     def _init_optimizers(self) -> list[torch.optim.Adam]:
         opt = {}
-        self._logger.info(f"Creating optimizers...")
-        self._logger.debug(f"self._models: {self._models}")
+        log.info(f"Creating optimizers...")
+        log.debug(f"self._models: {self._models}")
         for key, model in self._models.items():
             opt[key] = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=5e-4)
-        self._logger.info(f"Creating optimizers DONE!")
+        log.info(f"Creating optimizers DONE!")
         return opt
 
     def _train(model: nn.Module, 
@@ -66,15 +65,17 @@ class PipelineController():
               criterion, 
               num_epochs: int,
               train_mask: torch.Tensor, 
-              val_mask: torch.Tensor = None) -> tuple[list[float], list[float]]:
+              val_mask: torch.Tensor = None) -> tuple[nn.Module, list[float], list[float]]:
+        """Trains a model on a given dataset, with a train mask and an optional validation mask.
+        Returns a tuple of the trained model, a list of the training and validation losses."""
         
         train_losses = []
         val_losses = []
 
-        model.train()
         for epoch in range(num_epochs):
             
             ### TRAINING
+            model.train()
             # Clear the gradients
             optimizer.zero_grad()
             # Forward Pass
@@ -101,16 +102,16 @@ class PipelineController():
                 out = model(data.x, data.edge_index)
                 val_loss = criterion(out[val_mask], data.y[val_mask])
                 val_losses.append(val_loss.item())
-                _, pred = out.max(dim=1)
-                correct = int(pred[val_mask].eq(data.y[val_mask]).sum().item())
-                acc = correct / val_mask.sum().item()
+                _, pred = torch.max(out.data, 1)
+                correct = (pred[val_mask] == data.y[val_mask]).float().sum().item()
+                acc = correct / val_mask.shape[0]
             
             if (epoch + 1) % 10 == 0:
                 print(f"""Epoch: [{epoch+1}/{num_epochs}]
                   Training loss: {train_loss.item():.4f},\t Validation loss: {val_loss.item():.4f}
                   Accuracy: {acc}""")
 
-        return (train_losses, val_losses)
+        return (model, train_losses, val_losses)
         
     def train_test_dataset(self, dataset_name: str) -> tuple[list[float], list[float]]:
         r"""Train the model corresponding to the specified dataset.
@@ -131,7 +132,7 @@ class PipelineController():
         print(f"Numnodes: {dset.num_nodes}")
         train_mask, val_mask, test_mask = TrainValTestSplitter.split(dataset_name='cora', dataset=dset)
 
-        train_loss, val_loss = PipelineController._train(
+        trained_model, train_loss, val_loss = PipelineController._train(
             model=model,
             data=dset,
             optimizer=optimizer,
@@ -139,10 +140,14 @@ class PipelineController():
             num_epochs=self._epochs,
             train_mask=train_mask,
             val_mask=val_mask)
-        print(f"Model training of {dataset_name} finished!")
-        print(f"Evaluating {dataset_name} on test set...")
+        
+        self._models[dataset_name] = trained_model
+        model = trained_model
+
+        print(f"Model training for {dataset_name} finished!")
+        print(f"Evaluating {dataset_name} model on test set...")
         loss, acc = PipelineController._evaluate(
-            model=model, 
+            model=trained_model, 
             data=dset, 
             test_mask=test_mask, 
             criterion=self._loss_function)
@@ -162,8 +167,8 @@ class PipelineController():
             out = model(data.x, data.edge_index)
             loss = criterion(out[test_mask], data.y[test_mask])
             _, pred = out.max(dim=1)
-            correct = int(pred[test_mask].eq(data.y[test_mask]).sum().item())
-            acc = correct / test_mask.sum().item()
+            correct = (pred[test_mask] == data.y[test_mask]).float().sum().item()
+            acc = correct / test_mask.shape[0]
         
         return (loss.item(), acc) 
     
