@@ -20,8 +20,8 @@ class TrainValTestSplitter:
     
     def _cora_split(dset: InMemoryDataset):
         train_mask, val_mask = train_test_split(np.arange(dset.y.shape[0]), test_size=0.2, shuffle=True)
-        log.info(f'Train mask: {train_mask}')
-        log.info(f'Val mask: {val_mask}')
+        log.debug(f'Train mask: {train_mask}')
+        log.debug(f'Val mask: {val_mask}')
         test_mask = torch.ones(dset.num_nodes, dtype=bool)
         return (train_mask, val_mask, test_mask)
 

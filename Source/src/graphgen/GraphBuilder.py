@@ -1,30 +1,36 @@
+import logging
+
 import torch
-import random as rn
 import numpy as np
 from torch_geometric.data import Data
 import networkx as nx
 
-
+log = logging.getLogger(__name__)
 class GraphBuilder:
-    """Used to generate a graph instance of :obj:`torch_geometric.data.Data`"""
+    """Used to generate a graph instance of :obj:`torch_geometric.data.Data`."""
 
     def __init__(self, conf: dict, seed: int) -> None:
         assert conf is not None
-        rn.seed(seed)
+        np.random.seed(seed=seed)
         self._conf: dict = conf
 
     def _get_base_graph(self, directed: bool, multiple_edges: bool) -> None:
         """Assign to :obj:`self._G` one of the four main graph types"""
         types = [nx.Graph(), nx.DiGraph(), nx.MultiGraph(), nx.MultiDiGraph()]
-        ret_ind = int(directed) + (2 * int(multiple_edges))
+        ret_ind = int(directed) + (2 * int(multiple_edges)) # binary indexing
         self._G = types[ret_ind]
 
     def _generate_graph_from_config(self) -> Data:
         """Create a graph based on the configuration received"""
-        print(f"{self._conf}")
+
+        log.info(f"GraphBuilder received config:\n{self._conf}")
         self._get_base_graph(directed=self._conf['directed'], multiple_edges=self._conf['multiple_edges'])
-        self._generate_nodes(node_count=self._conf['node_count'], 
-                             node_feature_dim=self._conf['node_feature_dim'])
+
+        self._x = GraphBuilder._generate_nodes(
+            node_count=self._conf['node_count'], 
+            node_feature_dim=self._conf['node_feature_dim'])
+        
+        self._add_nodes_from_list(node_feature_list=self._x)
         
         # If density is set, then it is used as default option to set the number of edges
         if 'density' in self._conf:
@@ -35,20 +41,27 @@ class GraphBuilder:
                              edge_feature_dim=self._conf['edge_feature_dim'], 
                              loop_edges=self._conf['loop_edges'], 
                              multiple_edges=self._conf['multiple_edges'])
+        
         if self._conf['train_goal'] == 'node':
             self._generate_node_labels(node_count=self._conf['node_count'])
         elif self._conf['train_goal'] == 'graph':
-            self._generate_graph_label()
+            raise NotImplementedError('Graph labeling is not implemented yet, choose "node" option for now...')
         else:
             raise RuntimeError(f'Invalid configuration value for "train_goal" - {self._conf["train_goal"]}\nValid options: node, graph')
+        
+    def _generate_nodes(node_count: int,
+                        node_feature_dim: int) -> np.ndarray:
+        r"""Randomly generate :obj:`node_feature_dim` features for each node in the graph and add them to the graph contained by the builder object."""
+        x = np.random.rand(node_count, node_feature_dim) * 1000
+        return x
 
-    def _generate_nodes(self, node_count: int, node_feature_dim: int) -> None:
-        """Generate :obj:`node_count` number of nodes, each one with :obj:`node_feature_dim` attributes, which are integers between 0 and 10"""
-        for node_ind in range(node_count):
-            self._G.add_node(node_ind, attr=tuple(int(round(rn.random() * 10)) for _ in range(node_feature_dim)))
+    def _add_nodes_from_list(self, node_feature_list: np.ndarray) -> None:
+        """Add nodes to the graph based on a 2D NumPy array supplied, where each row corresponds to the features of a single node in the graph."""
+        for node_ind in range(node_feature_list.shape[0]):
+            self._G.add_node(node_ind, attr=node_feature_list[node_ind].tolist())
 
     def _generate_edges(self, node_count: int, edge_count: int, edge_feature_dim: int, loop_edges: bool, multiple_edges: bool) -> None:
-        """Generate :obj:`edge_count` number of edges, each one with :obj:`edge_feature_dim` attributes, which are integers between 0 and 10"""
+        """Generate :obj:`edge_count` number of edges, each one with :obj:`edge_feature_dim` attributes."""
         added_edges = 0
         while added_edges != edge_count:
             generated_edge = tuple(np.random.choice(node_count, 2, replace=loop_edges))
@@ -56,36 +69,35 @@ class GraphBuilder:
                 continue
             self._G.add_edge(
                 *generated_edge, 
-                attr=tuple(int(round(rn.random() * 10)) for _ in range(edge_feature_dim))
-            )
+                attr=(np.random.rand(edge_feature_dim) * 10000).tolist()
+                )
             added_edges += 1
 
-    def _generate_node_labels(self, node_count: int) -> None:
-        self._y = [int(round(rn.random())) for _ in range(node_count)]
+    def _generate_node_labels(self) -> None:
+        self._y = 1 # TODO
+        pass
 
-    def _generate_graph_label(self) -> None:
-        self._y = [int(round(rn.random()))]
-
-    def _generate_last_feature(vectors: np.ndarray, node_index: int) -> float:
-        r"""Generate the last feature of a node
+    def _generate_node_label(vectors: np.ndarray, node_index: int) -> float:
+        r"""Generate the label of a node
         Args:
-            :obj:`vectors` (required) - A 2D :obj:`ndarray` object of shape [<num_node_features - 1>; <num_nodes>], 
-        where each column corresponds to all features of one node, except for the last one.
+            :obj:`vectors` (required) - A 2D :obj:`ndarray` object of shape [<num_nodes>; <num_node_features>], 
+        where each row corresponds to all features of one node.
             :obj:`node_index` (required) - The index of the node for which the last feature should be calcualted.
             
         Returns: The last feature of node at index :obj:`node_index`"""
-        num_nodes = vectors.shape[1]
-        num_dimensions = vectors.shape[0] + 1
 
-        # Extract the three features of the current node
-        node_features = vectors[:, node_index]
+        num_nodes = vectors.shape[0]
+        num_dimensions = vectors.shape[1]
+
+        # Extract the features of the current node
+        node_features = vectors[node_index,:]
 
         # Compute the last feature based on the first three features of all nodes
         last_feature = 0.0
         for i in range(num_nodes):
             if i != node_index:
-                node_i_features = vectors[:, i]
-                for j in range(num_dimensions - 1):
+                node_i_features = vectors[i, :]
+                for j in range(num_dimensions):
                     component = node_features[j] + node_i_features[j]
                     exponential = np.exp(component)
                     last_feature += np.sin(exponential)
