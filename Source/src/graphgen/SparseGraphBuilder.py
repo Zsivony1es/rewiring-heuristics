@@ -3,16 +3,42 @@ import logging
 import torch
 import numpy as np
 from torch_geometric.data import Data
+from torch_geometric.datasets.graph_generator import GraphGenerator
 import networkx as nx
 
 log = logging.getLogger(__name__)
-class GraphBuilder:
+class SparseGraphBuilder(GraphGenerator):
     """Used to generate a graph instance of :obj:`torch_geometric.data.Data`."""
 
     def __init__(self, conf: dict, seed: int) -> None:
         assert conf is not None
         np.random.seed(seed=seed)
         self._conf: dict = conf
+
+    def __call__(self) -> Data:
+        """
+        Overriden method of base class - generates a graph based on the configuration passed.
+        """
+        self._generate_graph_from_config()
+
+        # couldn't get torch_geometric.utils.from_networkx() working
+        edges = [(edge[0], edge[1]) for edge in self._G.edges]
+        edge_index = torch.tensor(edges).t().contiguous()
+        edge_attr = torch.tensor([self._G.edges[edge]['attr'] for edge in self._G.edges])
+
+        num_nodes = self._G.number_of_nodes()
+
+        ret_val = Data(x=self._x, edge_index=edge_index, edge_attr=edge_attr, y=self._y)
+
+        assert ret_val.x.shape[0] == num_nodes
+        assert ret_val.x.shape[1] == len(self._G.nodes[0]['attr'])
+        assert ret_val.edge_index.shape[0] == 2, f'edge_index attribute should have 2 columns, but has {ret_val.edge_index.shape[0]}\nedge_index: {ret_val.edge_index}'
+        assert ret_val.edge_index.shape[1] == len(edges)
+        assert ret_val.edge_attr.shape[0] == len(edges)
+        assert ret_val.edge_attr.shape[1] == len(edge_attr[0])
+        assert len(ret_val.y) == 1 or len(ret_val.y) == num_nodes
+
+        return ret_val
 
     def _get_base_graph(self, directed: bool, multiple_edges: bool) -> None:
         """Assign to :obj:`self._G` one of the four main graph types"""
@@ -26,7 +52,7 @@ class GraphBuilder:
         log.info(f"GraphBuilder received config:\n{self._conf}")
         self._get_base_graph(directed=self._conf['directed'], multiple_edges=self._conf['multiple_edges'])
 
-        self._x = GraphBuilder._generate_nodes(
+        self._x = SparseGraphBuilder._generate_nodes(
             node_count=self._conf['node_count'], 
             node_feature_dim=self._conf['node_feature_dim'])
         
@@ -82,7 +108,7 @@ class GraphBuilder:
 
         labels = []
         for node_index in range(self._conf['node_count']):
-            label = GraphBuilder._generate_node_label(
+            label = SparseGraphBuilder._generate_node_label(
                 vectors=x,
                 node_index=node_index)
             labels.append(label)
@@ -116,29 +142,6 @@ class GraphBuilder:
                     last_feature += np.sin(exponential)
 
         return last_feature
-
-    def build(self) -> Data:
-        """Returns the graph as an instance of :obj:`torch_geometric.data.Data`."""
         
-        self._generate_graph_from_config()
-
-        # couldn't get torch_geometric.utils.from_networkx() working
-        edges = [(edge[0], edge[1]) for edge in self._G.edges]
-        edge_index = torch.tensor(edges).t().contiguous()
-        edge_attr = torch.tensor([self._G.edges[edge]['attr'] for edge in self._G.edges])
-
-        num_nodes = self._G.number_of_nodes()
-
-        ret_val = Data(x=self._x, edge_index=edge_index, edge_attr=edge_attr, y=self._y)
-
-        assert ret_val.x.shape[0] == num_nodes
-        assert ret_val.x.shape[1] == len(self._G.nodes[0]['attr'])
-        assert ret_val.edge_index.shape[0] == 2, f'edge_index attribute should have 2 columns, but has {ret_val.edge_index.shape[0]}\nedge_index: {ret_val.edge_index}'
-        assert ret_val.edge_index.shape[1] == len(edges)
-        assert ret_val.edge_attr.shape[0] == len(edges)
-        assert ret_val.edge_attr.shape[1] == len(edge_attr[0])
-        assert len(ret_val.y) == 1 or len(ret_val.y) == num_nodes
-
-        return ret_val
 
 

@@ -1,10 +1,10 @@
 import torch
 from torch_geometric.data import Dataset
 
-class GraphGenDataset(Dataset):
+class SparseGraphDataset(Dataset):
     """An object representation of the synthetic datasets created by graphgen.GraphBuilder"""
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
-        super().__init__(root, transform, pre_transform, pre_filter)
+        super(SparseGraphDataset, self).__init__(root, transform, pre_transform, pre_filter)
 
     @property
     def raw_file_names(self) -> list(str):
