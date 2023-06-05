@@ -52,24 +52,27 @@ class SparseGraphBuilder(GraphGenerator):
         log.info(f"GraphBuilder received config:\n{self._conf}")
         self._get_base_graph(directed=self._conf['directed'], multiple_edges=self._conf['multiple_edges'])
 
+        node_count = np.random.randint(30, self._conf['node_count_lim'])
+
         self._x = SparseGraphBuilder._generate_nodes(
-            node_count=self._conf['node_count'], 
+            node_count=node_count, 
             node_feature_dim=self._conf['node_feature_dim'])
         
         self._add_nodes_from_list(node_feature_list=self._x)
         
         # If density is set, then it is used as default option to set the number of edges
         if 'density' in self._conf:
-            self._conf['edge_count'] = self._conf['density'] * ((self._conf['node_count'] * (self._conf['node_count'] - 1)) / 2)
+            self._conf['edge_count'] = self._conf['density'] * ((node_count * (node_count - 1)) / 2)
 
-        self._generate_edges(node_count=self._conf['node_count'], 
+        self._generate_edges(node_count=node_count, 
                              edge_count=self._conf['edge_count'], 
                              edge_feature_dim=self._conf['edge_feature_dim'], 
                              loop_edges=self._conf['loop_edges'], 
                              multiple_edges=self._conf['multiple_edges'])
         
         if self._conf['train_goal'] == 'node':
-            self._generate_node_labels(x=self._x)
+            self._generate_node_labels(x=self._x,
+                                       node_count=node_count)
         elif self._conf['train_goal'] == 'graph':
             raise NotImplementedError('Graph labeling is not implemented yet, choose "node" option for now...')
         else:
@@ -103,11 +106,13 @@ class SparseGraphBuilder(GraphGenerator):
             added_edges += 1
         return
 
-    def _generate_node_labels(self, x: np.ndarray) -> None:
+    def _generate_node_labels(self, 
+                              x: np.ndarray,
+                              node_count: int) -> None:
         r"""Generates the node label for all nodes in the graph."""
 
         labels = []
-        for node_index in range(self._conf['node_count']):
+        for node_index in range(node_count):
             label = SparseGraphBuilder._generate_node_label(
                 vectors=x,
                 node_index=node_index)

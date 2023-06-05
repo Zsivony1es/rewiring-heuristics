@@ -10,7 +10,7 @@ from graphgen.SparseGraphDataset import SparseGraphDataset
 log = logging.getLogger(__name__)
 class SparseDatasetFileGenerator:
     """
-    Used to generate the files of a pseudo-random dataset, that can be used by the :obj:`GraphGenDataset` class.
+    Used to generate the files of a pseudo-random dataset, that can be used by the :obj:`SparseGraphDataset` class.
     """
     
     def __init__(self, graph_count: int, json_path: str = None) -> None:
@@ -40,7 +40,7 @@ class SparseDatasetFileGenerator:
                 'directed': False,
                 'multiple_edges': False,
                 'loop_edges': True,
-                'node_count': node_counts[i],
+                'node_count_lim': 500,
                 'node_feature_dim': 4,
                 'density': 0.15,
                 'edge_feature_dim': 1,
@@ -50,7 +50,7 @@ class SparseDatasetFileGenerator:
             gen_seed = np.random.randint(300)
             graph_gen = SparseGraphBuilder(conf=cfg, seed=gen_seed)
 
-            dset = graph_gen.build()
+            dset = graph_gen()
 
         
     
