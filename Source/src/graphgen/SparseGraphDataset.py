@@ -17,7 +17,7 @@ class SparseGraphDataset(Dataset):
 
     def download(self) -> None:
         raise NotImplementedError("""This function shouldn't be called, the datasets should 
-            have been downloaded to their correct folder during the cloning process!\n
+            have been downloaded to their correct folder during the cloning process!
             Repository link: https://git01lab.cs.univie.ac.at/peteri00/rewiring-heuristics.git""")
 
     def process(self):

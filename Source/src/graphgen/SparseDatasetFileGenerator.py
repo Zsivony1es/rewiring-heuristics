@@ -31,9 +31,6 @@ class SparseDatasetFileGenerator:
         Parameters:
             :param:`out_path` (required) - Path to folder where the output files will be written
         """
-        # Generated outside the for loop for ease of debugging
-        node_counts = np.random.random_integers(60, 1000, self._graph_count)
-
         for i in range(self._graph_count):
             # Generate configuration
             cfg = {

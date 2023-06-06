@@ -11,7 +11,28 @@ class SparseGraphBuilder(GraphGenerator):
     """Used to generate a graph instance of :obj:`torch_geometric.data.Data`."""
 
     def __init__(self, conf: dict, seed: int) -> None:
+        r"""Receives a configuration and a randomizer seed to initialize the builder object. The configuration is a dictionary, with the following fields:
+            {
+                'directed': bool,
+                'multiple_edges': bool,
+                'loop_edges': bool,
+                'node_count_lim': int,
+                'node_feature_dim': int,
+                EITHER
+                    'density': float 0 < x < 1,
+                OR
+                    'edge_count': int
+                'edge_feature_dim': int,
+                'train_goal': 'node' | 'graph'
+            }
+        """
+        required_fields = ['directed', 'multiple_edges', 'loop_edges', 'node_count_lim', 'node_feature_dim', 'edge_feature_dim', 'train_goal']
         assert conf is not None
+        for field in required_fields:
+            assert field in conf, f"The '{field}' field in the configuration of SparseGraphBuilder is not set!"
+
+        assert ('density' in conf) ^ ('edge_count' in conf), "Exactly one of these two fields: 'density' and 'edge_count' should be set!"
+
         np.random.seed(seed=seed)
         self._conf: dict = conf
 
