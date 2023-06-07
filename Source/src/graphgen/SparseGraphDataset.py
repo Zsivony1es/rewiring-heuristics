@@ -1,15 +1,15 @@
 import torch
-from torch_geometric.data import Dataset
+from torch_geometric.data import Dataset, Data
 
 class SparseGraphDataset(Dataset):
     """An object representation of the synthetic datasets created by graphgen.GraphBuilder"""
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
+        self._root: str = root
         super(SparseGraphDataset, self).__init__(root, transform, pre_transform, pre_filter)
 
     @property
     def raw_file_names(self) -> list(str):
-        return ['PI_dset1.node_attrs', 'PI_dset1.edges', 'PI_dset1.graph_lbls', 'PI_dset1.graph_idx',
-                'PI_dset2.node_attrs', 'PI_dset2.edges', 'PI_dset2.graph_lbls', 'PI_dset2.graph_idx']
+        return ['raw_dset_list.pt']
     
     @property
     def processed_file_names(self) -> list(str):
@@ -21,7 +21,8 @@ class SparseGraphDataset(Dataset):
             Repository link: https://git01lab.cs.univie.ac.at/peteri00/rewiring-heuristics.git""")
 
     def process(self):
-        pass
+        graphs: list[Data] = torch.load(f'{self._root}/{self.raw_file_names[0]}')
+        print(graphs[0])
 
     def len(self):
         pass

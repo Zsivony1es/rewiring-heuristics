@@ -1,5 +1,9 @@
-from torch_geometric import datasets
 import logging
+
+from torch_geometric import datasets
+
+from graphgen.SparseGraphDataset import SparseGraphDataset
+
 
 class Utils:
     def __init__(self) -> None:
@@ -17,7 +21,7 @@ class Utils:
     def get_dataset_dictionary(self, dset_conf: str, rewiring) -> dict:
         dset_base = "Source/res/datasets"
 
-        available_datasets = ['cora', 'enzymes', 'amazon', 'ppi']
+        available_datasets = ['sparse', 'cora', 'enzymes', 'amazon', 'ppi']
         using_datasets = None
         if dset_conf.strip().lower() == '*':
             using_datasets = available_datasets
@@ -32,6 +36,7 @@ class Utils:
         dsets = {}
         for dset in using_datasets:
             match dset.lower().strip():
+                case 'sparse': dsets['sparse'] = SparseGraphDataset(root=f'{dset_base}/sparse_dset', transform=rewiring)
                 case 'cora': dsets['cora'] = datasets.Planetoid(root=f'{dset_base}/cora_tf', name='Cora', transform=rewiring)
                 case 'enzymes': dsets['enzymes'] = datasets.TUDataset(root=f'{dset_base}/enzymes', name='ENZYMES', transform=rewiring)
                 case 'amazon': dsets['amazon'] = datasets.AmazonProducts(root=f'{dset_base}/amazonprods', transform=rewiring)

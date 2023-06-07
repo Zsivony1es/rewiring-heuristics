@@ -1,4 +1,5 @@
 import logging
+import math
 
 import torch
 import numpy as np
@@ -83,7 +84,7 @@ class SparseGraphBuilder(GraphGenerator):
         
         # If density is set, then it is used as default option to set the number of edges
         if 'density' in self._conf:
-            self._conf['edge_count'] = self._conf['density'] * ((node_count * (node_count - 1)) / 2)
+            self._conf['edge_count'] = math.floor(self._conf['density'] * ((node_count * (node_count - 1)) / 2))
 
         self._generate_edges(node_count=node_count, 
                              edge_count=self._conf['edge_count'], 
@@ -117,6 +118,7 @@ class SparseGraphBuilder(GraphGenerator):
         """Generate :obj:`edge_count` number of edges, each one with :obj:`edge_feature_dim` attributes."""
         added_edges = 0
         while added_edges != edge_count:
+            # log.debug(f"Generating edges of graph [{added_edges}/{edge_count}]")
             generated_edge = tuple(np.random.choice(node_count, 2, replace=loop_edges))
             if not multiple_edges and self._G.has_edge(*generated_edge):
                 continue

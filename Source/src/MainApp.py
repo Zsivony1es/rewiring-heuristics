@@ -6,17 +6,17 @@ from rewiring.transform.AddRandomEdges import AddRandomEdges
 from rewiring.transform.ReduceDiameter import ReduceDiameter
 from rewiring.PipelineController import PipelineController
 from rewiring.PlotGenerator import PlotGenerator
-from utils import Utils
+from rewiring.Utils import Utils
 
 
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 ### Parse arguments
 parser = argparse.ArgumentParser(description='Try out different rewiring techniques with different datasets and evaluate them.')
 parser.add_argument('--dataset_list', required=True, type=str, help="""List of datasets which should be used for training, use * to 
                     train a model for every available dataset, or enter a comma-separated list of datasets, e.g. cora,enzymes.
-                    \nAvailable options: cora, enzymes, amazon, ppi""")
+                    \nAvailable options: sparse, cora, enzymes, amazon, ppi""")
 parser.add_argument('--model_type', required=True, type=str, choices=['GCN', 'GIN', 'GAT'], help='Options: GCN, GIN, GAT')
 parser.add_argument('--rewiring', required=False, type=str, choices=['ARE', 'RD', 'GDC'], help='Options: ARE = AddRandomEdges, RD = ReduceDiameter, GDC = Graph Diffusion Convolution')
 parser.add_argument('--epochs', required=False, type=int, default=300, help='Set the amount of epochs each training cycle should include. Defaults to 300')
@@ -50,12 +50,20 @@ controller = PipelineController(
     generate_plots = cfg.generate_plots,
 )
 
-train_loss, val_loss = controller.train_test_dataset('cora')
+for key, val in datasets.items():
+  train_loss, val_loss, accuracy = controller.train_test_dataset(key)
 
-if cfg.generate_plots:
-  pg = PlotGenerator()
-  pg.generate_loss_plot(
-          train_loss=train_loss,
-          val_loss=val_loss,
-          dset_name='Cora',
-          model_type=cfg.model_type)
+  if cfg.generate_plots:
+    pg = PlotGenerator()
+
+    pg.generate_loss_plot(
+            train_loss=train_loss,
+            val_loss=val_loss,
+            dset_name=key,
+            model_type=cfg.model_type)
+    pg.generate_accuracy_plot(
+      accuracy=accuracy,
+      dset_name=key,
+      model_type=cfg.model_type
+    )
+    pg.leave_last_n_plots(n=4)

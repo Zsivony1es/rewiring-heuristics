@@ -71,6 +71,7 @@ class PipelineController():
         
         train_losses = []
         val_losses = []
+        acc_list = []
 
         for epoch in range(num_epochs):
             
@@ -105,18 +106,19 @@ class PipelineController():
                 _, pred = torch.max(out.data, 1)
                 correct = (pred[val_mask] == data.y[val_mask]).float().sum().item()
                 acc = correct / val_mask.shape[0]
+                acc_list.append(acc)
             
             if (epoch + 1) % 10 == 0:
                 print(f"""Epoch: [{epoch+1}/{num_epochs}]
                   Training loss: {train_loss.item():.4f},\t Validation loss: {val_loss.item():.4f}
                   Accuracy: {acc}""")
 
-        return (model, train_losses, val_losses)
+        return (model, train_losses, val_losses, acc_list)
         
     def train_test_dataset(self, dataset_name: str) -> tuple[list[float], list[float]]:
         r"""Train the model corresponding to the specified dataset.
         Args:
-            dataset_name (required) - The name of the dataset for which the corresponding model should be trained.
+            :param:`dataset_name` (required) - The name of the dataset for which the corresponding model should be trained.
         Returns: 
             A tuple of two lists containing the loss measured in each epoch on the training and the validation set respectively, 
             so with 100 epochs, each list should be 100 in length."""
@@ -129,10 +131,9 @@ class PipelineController():
         print(f"Beginning model training for {dataset_name}")
 
         # Divide the dataset into training, validation and test sets
-        print(f"Numnodes: {dset.num_nodes}")
-        train_mask, val_mask, test_mask = TrainValTestSplitter.split(dataset_name='cora', dataset=dset)
+        train_mask, val_mask, test_mask = TrainValTestSplitter.split(dataset_name=dataset_name, dataset=dset)
 
-        trained_model, train_loss, val_loss = PipelineController._train(
+        trained_model, train_loss, val_loss, accuracy_list = PipelineController._train(
             model=model,
             data=dset,
             optimizer=optimizer,
@@ -155,7 +156,7 @@ class PipelineController():
         print(f"""  Test loss: {loss:.4f}
           Accuracy: {acc}""")
 
-        return (train_loss, val_loss)
+        return (train_loss, val_loss, accuracy_list)
     
     def _evaluate(model: nn.Module, 
                   data: Dataset | InMemoryDataset, 

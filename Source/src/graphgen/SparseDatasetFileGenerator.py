@@ -1,10 +1,10 @@
-import json
 import logging
 
+import torch
 import numpy as np
+from torch_geometric.data import Data
 
 from graphgen.SparseGraphBuilder import SparseGraphBuilder
-from graphgen.SparseGraphDataset import SparseGraphDataset
 
 
 log = logging.getLogger(__name__)
@@ -13,14 +13,11 @@ class SparseDatasetFileGenerator:
     Used to generate the files of a pseudo-random dataset, that can be used by the :obj:`SparseGraphDataset` class.
     """
     
-    def __init__(self, graph_count: int, json_path: str = None) -> None:
+    def __init__(self, graph_count: int) -> None:
         assert graph_count > 0, "You must generate at least one graph!"
         assert graph_count < 10000, "Maximum number of graphs that can be generated is 10,000!"
 
         np.random.seed(15216142)
-
-        if json_path is not None:
-            self._conf = json.load(open(json_path,'r'))
         self._graph_count = graph_count
         
     def generate_dataset_files(self, 
@@ -31,7 +28,10 @@ class SparseDatasetFileGenerator:
         Parameters:
             :param:`out_path` (required) - Path to folder where the output files will be written
         """
-        for i in range(self._graph_count):
+
+        dset_list = []
+
+        for i in range(1, self._graph_count + 1):
             # Generate configuration
             cfg = {
                 'directed': False,
@@ -46,8 +46,16 @@ class SparseDatasetFileGenerator:
 
             gen_seed = np.random.randint(300)
             graph_gen = SparseGraphBuilder(conf=cfg, seed=gen_seed)
+            log.info(f"Creating graph [{i}/{self._graph_count}]")
+            if i % 10 == 0:
+                print(f"Creating graph [{i}/{self._graph_count}]")
+            dset: Data = graph_gen()
+            dset_list.append(dset)
 
-            dset = graph_gen()
+        torch.save(dset_list, out_path)
+            
+
+
 
         
     
