@@ -6,6 +6,7 @@ from typing import Any
 from math import floor
 
 from torch_geometric.data import Dataset, InMemoryDataset
+from torch_geometric.loader import DataLoader
 
 from rewiring.model.GAT import GAT
 from rewiring.model.GCN import GCN
@@ -64,6 +65,7 @@ class PipelineController():
               optimizer, 
               criterion, 
               num_epochs: int,
+              device,
               train_mask: torch.Tensor, 
               val_mask: torch.Tensor = None) -> tuple[nn.Module, list[float], list[float]]:
         """Trains a model on a given dataset, with a train mask and an optional validation mask.
@@ -73,11 +75,10 @@ class PipelineController():
         val_losses = []
         acc_list = []
 
-
         print(f"Beginning model training...")    
+        model.to(device)
 
         for epoch in range(num_epochs):
-            
             ### TRAINING
             model.train()
             # Clear the gradients
@@ -97,7 +98,7 @@ class PipelineController():
             if val_mask is None:
                 if (epoch + 1) % 10 == 0:
                     print(f"""Epoch: [{epoch+1}/{num_epochs}]
-                      Training loss: {train_loss.item():.4f}""")
+                    Training loss: {train_loss.item():.4f}""")
                 continue
 
             ### VALIDATION
@@ -142,6 +143,7 @@ class PipelineController():
             optimizer=optimizer,
             criterion=self._loss_function,
             num_epochs=self._epochs,
+            device=self._device,
             train_mask=train_mask,
             val_mask=val_mask)
         
