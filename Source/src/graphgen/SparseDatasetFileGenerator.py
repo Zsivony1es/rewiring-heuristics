@@ -40,7 +40,7 @@ class SparseDatasetFileGenerator:
                 'node_count_lim': 500,
                 'node_feature_dim': 4,
                 'density': 0.15,
-                'edge_feature_dim': 1,
+                'edge_feature_dim': 0,
                 'train_goal': 'node'
             }
 

@@ -32,7 +32,7 @@ class SparseGraphBuilder(GraphGenerator):
         for field in required_fields:
             assert field in conf, f"The '{field}' field in the configuration of SparseGraphBuilder is not set!"
 
-        assert ('density' in conf) ^ ('edge_count' in conf), "Exactly one of these two fields: 'density' and 'edge_count' should be set!"
+        assert ('density' in conf) ^ ('edge_count' in conf), "Exactly one of these two fields: 'density' or 'edge_count' should be set!"
 
         np.random.seed(seed=seed)
         self._conf: dict = conf
@@ -46,7 +46,11 @@ class SparseGraphBuilder(GraphGenerator):
         # couldn't get torch_geometric.utils.from_networkx() working
         edges = [(edge[0], edge[1]) for edge in self._G.edges]
         edge_index = torch.tensor(edges).t().contiguous()
-        edge_attr = torch.tensor([self._G.edges[edge]['attr'] for edge in self._G.edges])
+
+        if self._conf['edge_feature_dim'] != 0:
+            edge_attr = torch.tensor([self._G.edges[edge]['attr'] for edge in self._G.edges])
+        else:
+            edge_attr = None
 
         num_nodes = self._G.number_of_nodes()
 
@@ -56,8 +60,9 @@ class SparseGraphBuilder(GraphGenerator):
         assert ret_val.x.shape[1] == len(self._G.nodes[0]['attr'])
         assert ret_val.edge_index.shape[0] == 2, f'edge_index attribute should have 2 columns, but has {ret_val.edge_index.shape[0]}\nedge_index: {ret_val.edge_index}'
         assert ret_val.edge_index.shape[1] == len(edges)
-        assert ret_val.edge_attr.shape[0] == len(edges)
-        assert ret_val.edge_attr.shape[1] == len(edge_attr[0])
+        if self._conf['edge_feature_dim'] != 0:
+            assert ret_val.edge_attr.shape[0] == len(edges)
+            assert ret_val.edge_attr.shape[1] == len(edge_attr[0])
         assert len(ret_val.y) == 1 or len(ret_val.y) == num_nodes
 
         return ret_val
@@ -122,10 +127,13 @@ class SparseGraphBuilder(GraphGenerator):
             generated_edge = tuple(np.random.choice(node_count, 2, replace=loop_edges))
             if not multiple_edges and self._G.has_edge(*generated_edge):
                 continue
-            self._G.add_edge(
-                *generated_edge, 
-                attr=(np.random.rand(edge_feature_dim) * 10000).tolist()
-                )
+            if edge_feature_dim != 0:
+                self._G.add_edge(
+                    *generated_edge, 
+                    attr=(np.random.rand(edge_feature_dim) * 10000).tolist())
+            else:
+                self._G.add_edge(*generated_edge)
+
             added_edges += 1
         return
 

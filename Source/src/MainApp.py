@@ -9,7 +9,7 @@ from rewiring.PlotGenerator import PlotGenerator
 from rewiring.Utils import Utils
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 ### Parse arguments

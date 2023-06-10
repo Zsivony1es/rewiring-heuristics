@@ -73,6 +73,9 @@ class PipelineController():
         val_losses = []
         acc_list = []
 
+
+        print(f"Beginning model training...")    
+
         for epoch in range(num_epochs):
             
             ### TRAINING

@@ -21,7 +21,7 @@ class Utils:
     def get_dataset_dictionary(self, dset_conf: str, rewiring) -> dict:
         dset_base = "Source/res/datasets"
 
-        available_datasets = ['sparse', 'cora', 'enzymes', 'amazon', 'ppi']
+        available_datasets = ['sparse', 'cora', 'enzymes', 'proteins', 'reddit-binary', 'amazon', 'ppi']
         using_datasets = None
         if dset_conf.strip().lower() == '*':
             using_datasets = available_datasets
@@ -39,6 +39,8 @@ class Utils:
                 case 'sparse': dsets['sparse'] = SparseGraphDataset(root=f'{dset_base}/sparse_dset', transform=rewiring)
                 case 'cora': dsets['cora'] = datasets.Planetoid(root=f'{dset_base}/cora_tf', name='Cora', transform=rewiring)
                 case 'enzymes': dsets['enzymes'] = datasets.TUDataset(root=f'{dset_base}/enzymes', name='ENZYMES', transform=rewiring)
+                case 'proteins': dsets['proteins'] = datasets.TUDataset(root=f'{dset_base}/proteins', name='PROTEINS', transform=rewiring)
+                case 'reddit-binary': dsets['reddit-binary'] = datasets.TUDataset(root=f'{dset_base}/reddit-binary', name='REDDIT-BINARY', transform=rewiring)
                 case 'amazon': dsets['amazon'] = datasets.AmazonProducts(root=f'{dset_base}/amazonprods', transform=rewiring)
                 case 'ppi': dsets['ppi'] = datasets.PPI(root=f'{dset_base}/ppi', transform=rewiring)
                 case _: raise ValueError(f'Invalid dataset setting: {dset}')
