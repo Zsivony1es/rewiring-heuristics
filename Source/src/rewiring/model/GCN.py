@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 
 class GCN(nn.Module):
-    def __init__(self, num_features, hidden_size, num_classes):
+    def __init__(self, num_features: int, num_classes: int, hidden_size: int = 16):
         super(GCN, self).__init__()
         self.conv1 = GCNConv(num_features, hidden_size)
         self.conv2 = GCNConv(hidden_size, hidden_size)
@@ -16,7 +16,7 @@ class GCN(nn.Module):
     def set_classification_task(self, task):
         self.classification_task = task
 
-    def forward(self, x, edge_index, batch = None):
+    def forward(self, x: torch.Tensor, edge_index: torch.Tensor, batch = None):
         x = self.conv1(x, edge_index)
         x = F.relu(x)
         x = self.conv2(x, edge_index)
