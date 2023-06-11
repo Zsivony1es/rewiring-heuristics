@@ -2,8 +2,7 @@
 /Model/*.bak_*
 /Source/res/*
 /Source/out/plots/*
-!/Source/res/dset1
-!/Source/res/dset2
+!/Source/res/datasets/sparse_dset/raw_dset_list.pt
 /.vscode
 /.pytest_cache
 /.conda

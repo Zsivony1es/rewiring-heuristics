@@ -60,14 +60,15 @@ class PipelineController():
         log.info(f"Creating optimizers DONE!")
         return opt
 
-    def _train(model: nn.Module, 
-              data: Dataset | InMemoryDataset, 
-              optimizer, 
-              criterion, 
-              num_epochs: int,
-              device,
-              train_mask: torch.Tensor, 
-              val_mask: torch.Tensor = None) -> tuple[nn.Module, list[float], list[float]]:
+    def _train_node_task(
+            model: nn.Module, 
+            data: Dataset | InMemoryDataset, 
+            optimizer, 
+            criterion, 
+            num_epochs: int,
+            device,
+            train_mask: torch.Tensor, 
+            val_mask: torch.Tensor = None) -> tuple[nn.Module, list[float], list[float]]:
         """Trains a model on a given dataset, with a train mask and an optional validation mask.
         Returns a tuple of the trained model, a list of the training and validation losses."""
         
@@ -137,7 +138,7 @@ class PipelineController():
         # Divide the dataset into training, validation and test sets
         train_mask, val_mask, test_mask = TrainValTestSplitter.split(dataset_name=dataset_name, dataset=dset)
 
-        trained_model, train_loss, val_loss, accuracy_list = PipelineController._train(
+        trained_model, train_loss, val_loss, accuracy_list = PipelineController._train_node_task(
             model=model,
             data=dset,
             optimizer=optimizer,
