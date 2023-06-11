@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import torch
 from torch.nn import Module
 from torch_geometric.data import Dataset
+from torch_geometric.loader import DataLoader
 
 
 class AbstractTrainingPipeline(ABC):
@@ -16,7 +17,7 @@ class AbstractTrainingPipeline(ABC):
     
     @abstractmethod
     def single_train(self,
-              train_dset: Dataset) -> float:
+              train_dset: Dataset | DataLoader) -> float:
         """
         Trains the model on a given dataset for one epoch. Returns the training loss.
         """

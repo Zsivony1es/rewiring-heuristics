@@ -1,8 +1,8 @@
 /Model/*.lck
 /Model/*.bak_*
+!/Source/res/datasets/sparse_dset/raw_dset_list.pt
 /Source/res/*
 /Source/out/plots/*
-!/Source/res/datasets/sparse_dset/raw_dset_list.pt
 /.vscode
 /.pytest_cache
 /.conda
