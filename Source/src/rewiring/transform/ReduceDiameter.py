@@ -87,7 +87,6 @@ class ReduceDiameter(BaseTransform):
             y = None
 
         # Get edge indices, edge attributes, and edge directions
-        
         if not G.is_directed():
             edge_list = []
             for u, v in G.edges():
@@ -100,12 +99,15 @@ class ReduceDiameter(BaseTransform):
         has_attr_field = 'attr' in ([data for u, v, data in G.edges(data=True)][0].keys())
         if has_attr_field:
             edge_attrs = []
+            parsed_multiedges = []
             for u, v in G.edges():
                 multi_edge_attributes = G.get_edge_data(u, v)
                 if 0 in multi_edge_attributes:
                     # Graph has multiple edges here, each has its own attribute
-                    for key in multi_edge_attributes:
-                        edge_attrs.append(multi_edge_attributes[key]['attr'])
+                    if (u, v) not in parsed_multiedges:
+                        for key in multi_edge_attributes:
+                            edge_attrs.append(multi_edge_attributes[key]['attr'])
+                        parsed_multiedges.append((u,v))
                 else:
                     if 'attr' in multi_edge_attributes:
                         edge_attrs.append(multi_edge_attributes['attr'])
@@ -181,6 +183,7 @@ class ReduceDiameter(BaseTransform):
             for node2, path in paths.items():
                 if len(path) > len(shortest_paths[longest_ind[0]][longest_ind[1]]):
                     longest_ind = (node1, node2) 
+
         if self._avg_edge_attr is not None:
             G.add_edge(*longest_ind, attr=self._avg_edge_attr)
         else:
