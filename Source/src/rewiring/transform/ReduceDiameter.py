@@ -30,6 +30,8 @@ class ReduceDiameter(BaseTransform):
 
         self._x = None
         self._y = None
+        self._avg_edge_attr = None
+        self.edges_added = 0
 
         assert not ((max_diam is None) and (min_density is None)), "Either the maximum diameter or a ratio to the amount of current edges must be specified!"
         if max_diam is not None:
@@ -95,9 +97,24 @@ class ReduceDiameter(BaseTransform):
             edge_list = [[u, v] for u, v in G.edges]
         edge_index = torch.tensor(edge_list).t().contiguous()
 
-        has_attr_field = any('attr' in data for u, v, data in G.edges(data=True))
+        has_attr_field = 'attr' in ([data for u, v, data in G.edges(data=True)][0].keys())
         if has_attr_field:
-            edge_attr = torch.tensor([G.get_edge_data(u, v)[0]['attr'] for u, v, _ in G.edges])
+            edge_attrs = []
+            for u, v in G.edges():
+                multi_edge_attributes = G.get_edge_data(u, v)
+                if 0 in multi_edge_attributes:
+                    # Graph has multiple edges here, each has its own attribute
+                    for key in multi_edge_attributes:
+                        edge_attrs.append(multi_edge_attributes[key]['attr'])
+                else:
+                    if 'attr' in multi_edge_attributes:
+                        edge_attrs.append(multi_edge_attributes['attr'])
+                    else:
+                        # For some reason a LRGB dataset has two edges (out of thousands) with no attribute data???
+                        # This would be a reason to throw an error, instead to get it to work I just set it to [0,0]
+                        edge_attrs.append([0,0])
+                        # raise RuntimeError(f"The edge ({u},{v}) doesn't have any attributes assigned!")
+            edge_attr = torch.tensor(edge_attrs)
             data = Data(x=x, y=y, edge_index=edge_index, edge_attr=edge_attr, is_directed=G.is_directed())
         else:
             data = Data(x=x, y=y, edge_index=edge_index, is_directed=G.is_directed())
@@ -129,14 +146,25 @@ class ReduceDiameter(BaseTransform):
             nx_graph.add_node(i, attr=feat.tolist())
 
         # Add edges with attributes (if they exist)
+        # Also I average out all edge attributes which will be used when inserting new edges
+        avg_edge_attribute = []
+
         if data.edge_attr is not None:
             edge_index = 0
             for u, v in data.edge_index.t().tolist():
-                nx_graph.add_edge(u, v, attr=data.edge_attr[edge_index].tolist())
+                attribute = data.edge_attr[edge_index].tolist()
+                avg_edge_attribute.append(attribute)
+                nx_graph.add_edge(u, v, attr=attribute)
                 edge_index += 1
         else:
             for u, v in data.edge_index.t().tolist():
                 nx_graph.add_edge(u, v)
+
+        avg_edge_attribute = np.array(avg_edge_attribute)
+        avgs = []
+        for i in range(avg_edge_attribute.shape[1]):
+            avgs.append(avg_edge_attribute[:,i].mean())
+        self._avg_edge_attr = avgs
 
         return nx_graph
 
@@ -152,8 +180,14 @@ class ReduceDiameter(BaseTransform):
             for node2, path in paths.items():
                 if len(path) > len(shortest_paths[longest_ind[0]][longest_ind[1]]):
                     longest_ind = (node1, node2) 
+        if self._avg_edge_attr is not None:
+            G.add_edge(*longest_ind, attr=self._avg_edge_attr)
+        else:
+            G.add_edge(*longest_ind)
 
-        G.add_edge(*longest_ind)
+        self.edges_added += 1
+        print(f"Added {self.edges_added} so far...")
+
         return G
 
     def _is_multigraph(edge_index: torch.Tensor=None, data: Data=None) -> bool:

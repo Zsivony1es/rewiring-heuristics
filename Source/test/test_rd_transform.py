@@ -90,10 +90,11 @@ def test_rd_from_networkx_conversion_undirected():
     id = np.identity(nodes)
     for i in range(nodes):
         G.add_node(i, attr=id[i,:])
-    edges_to_add = [(0, 1), (0, 4), (1, 3), (2, 3), (2, 4), (2, 5), (3, 5)]
-    edge_attrs = [[0.1, 0.2], [0.3, 0.6], [0.7, 0.1], [1.0, 0.0], [0.1, 0.1], [0.4, 0.6], [0.7, 0.5]]
+    edges_to_add = [(0, 1), (0, 1), (0, 4), (1, 3), (2, 3), (2, 4), (2, 5), (3, 5)]
+    edge_attrs = [[0.1, 0.2], [3.1, 0.2], [0.3, 0.6], [0.7, 0.1], [1.0, 0.0], [0.1, 0.1], [0.4, 0.6], [0.7, 0.5]]
     for i in range(len(edges_to_add)):
-        G.add_edge(*edges_to_add[i], attr=edge_attrs[i])
+        u,v = edges_to_add[i]
+        G.add_edge(u, v, attr=edge_attrs[i])
 
     expected_x = torch.tensor([
         [1., 0., 0., 0., 0., 0.],
@@ -104,10 +105,11 @@ def test_rd_from_networkx_conversion_undirected():
         [0., 0., 0., 0., 0., 1.]])
     
     expected_edge_index = torch.tensor([
-        [0, 1, 0, 4, 1, 3, 2, 3, 2, 4, 2, 5, 3, 5],
-        [1, 0, 4, 0, 3, 1, 3, 2, 4, 2, 5, 2, 5, 3]])
+        [0, 1, 0, 1, 0, 4, 1, 3, 2, 3, 2, 4, 2, 5, 3, 5],
+        [1, 0, 1, 0, 4, 0, 3, 1, 3, 2, 4, 2, 5, 2, 5, 3]])
     
     expected_edge_attr = torch.tensor([[0.1, 0.2], 
+                                       [3.1, 0.2],
                                        [0.3, 0.6], 
                                        [0.7, 0.1], 
                                        [1.0, 0.0], 
@@ -123,6 +125,38 @@ def test_rd_from_networkx_conversion_undirected():
     assert torch.all(torch.eq(data.edge_index, expected_edge_index)).item()
     assert torch.all(torch.eq(data.edge_attr, expected_edge_attr)).item()
     assert str(G.__class__) == "<class 'networkx.classes.multigraph.MultiGraph'>"
+
+def test_rd_from_networkx_no_edge_attributes():
+    nodes = 6
+    id = np.identity(nodes)
+    G2 = nx.MultiGraph()
+    for i in range(nodes):
+        G2.add_node(i, attr=id[i,:])
+    edges_to_add = [(0, 1), (0, 4), (1, 3), (2, 3), (2, 4), (2, 5), (3, 5)]
+    for i in range(len(edges_to_add)):
+        G2.add_edge(*edges_to_add[i])
+
+    expected_x = torch.tensor([
+        [1., 0., 0., 0., 0., 0.],
+        [0., 1., 0., 0., 0., 0.],
+        [0., 0., 1., 0., 0., 0.],
+        [0., 0., 0., 1., 0., 0.],
+        [0., 0., 0., 0., 1., 0.],
+        [0., 0., 0., 0., 0., 1.]])
+    
+    expected_edge_index = torch.tensor([
+        [0, 1, 0, 4, 1, 3, 2, 3, 2, 4, 2, 5, 3, 5],
+        [1, 0, 4, 0, 3, 1, 3, 2, 4, 2, 5, 2, 5, 3]])
+    
+    rd = ReduceDiameter(max_diam=2)
+
+    data = rd._from_networkx(G=G2)
+
+    assert torch.all(torch.eq(data.x, expected_x)).item()
+    assert torch.all(torch.eq(data.edge_index, expected_edge_index)).item()
+    assert data.edge_attr is None
+    assert str(G2.__class__) == "<class 'networkx.classes.multigraph.MultiGraph'>"
+
     
 def test_rd_conversion_integration_cora():
 

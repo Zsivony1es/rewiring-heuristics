@@ -1,7 +1,7 @@
 import torch
-from torch_geometric.data import Dataset, Data
+from torch_geometric.data import InMemoryDataset, Data
 
-class SparseGraphDataset(Dataset):
+class SparseGraphDataset(InMemoryDataset):
     """An object representation of the synthetic datasets created by graphgen.GraphBuilder"""
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
         self._root: str = root
