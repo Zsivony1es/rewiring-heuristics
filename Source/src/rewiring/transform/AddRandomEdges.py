@@ -5,7 +5,9 @@ from torch_geometric.utils import is_undirected
 import numpy as np
 import torch
 from math import ceil
+import logging
 
+log = logging.getLogger(__name__)
 class AddRandomEdges(BaseTransform):
     """Adds edges randomly to the input graph"""
     # Number of edges should be a percentage
@@ -39,16 +41,21 @@ class AddRandomEdges(BaseTransform):
         data.validate()
         
         if is_undirected(data.edge_index):
-            complete_graph_edge_count = (data.num_nodes * (data.num_nodes - 1))/2
+            complete_graph_edge_count = int((data.num_nodes * (data.num_nodes - 1))/2)
         else:
-            complete_graph_edge_count = data.num_nodes * (data.num_nodes - 1)
+            complete_graph_edge_count = int(data.num_nodes * (data.num_nodes - 1))
         free_edge_spot_count = complete_graph_edge_count - data.num_edges
 
         if self._num_edges_add == None and self._min_density != None:
-            self._num_edges_add = ceil(self._min_density * complete_graph_edge_count) - data.num_edges
+            num_edges_add = int(ceil(self._min_density * complete_graph_edge_count) - data.num_edges)
 
-        assert data.num_nodes > 1
-        assert free_edge_spot_count >= self._num_edges_add
+        if num_edges_add < 1:
+            return data
+
+        assert data.num_nodes > 1, "Graph only contains one node!"
+        assert free_edge_spot_count >= num_edges_add, \
+            f"""There are not enough free edge spots in the graph! [{data.num_edges}/{complete_graph_edge_count}] \
+You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots remain! {data.num_nodes}"""
 
         node_indices = data.edge_index.flatten().unique()
 
@@ -58,15 +65,15 @@ class AddRandomEdges(BaseTransform):
         
         if (free_edge_spot_count / complete_graph_edge_count) > self._rand_threshold:
             
-            for _ in range(self._num_edges_add):
+            for _ in range(num_edges_add):
                 while True:
                     # Get two node indices at random
                     edge = node_indices[np.random.choice(node_indices.shape[0], size=2, replace=self._allow_self_loops)]
                     # If the edge is not contained in the graph, we can break the loop and add it
-                    if not torch.eq(edge, data.edge_index).all(1).any().item():
+                    if not torch.eq(edge, data.edge_index.t()).all(1).any().item():
                         break
                 # Add edge to graph
-                data.edge_index = torch.cat((data.edge_index, edge.unsqueeze(0)), dim=0)
+                data.edge_index = torch.cat((data.edge_index, edge.unsqueeze(0).t()), dim=1)
 
             data.validate()
             return data
@@ -78,8 +85,9 @@ class AddRandomEdges(BaseTransform):
 
             # Get edge set of complement graph
             mask = torch.ones(len(all_possible_edges), dtype=torch.bool)
-            for i in range(len(data.edge_index)):
-                mask &= ~(all_possible_edges == data.edge_index[i]).all(dim=1)
+            curr_edges = data.edge_index.t()
+            for i in range(curr_edges.shape[0]):
+                mask &= ~(all_possible_edges == curr_edges[i]).all(dim=1)
             nonexistant_edge_set = all_possible_edges[mask]
 
             # Filter out self-looping edges
@@ -87,7 +95,7 @@ class AddRandomEdges(BaseTransform):
                 nonexistant_edge_set = nonexistant_edge_set[nonexistant_edge_set[:, 0] != nonexistant_edge_set[:, 1]]
 
             # Select the edges we want to add randomly
-            edges_to_add = nonexistant_edge_set[np.random.choice(nonexistant_edge_set.shape[0], size=5, replace=False)]
+            edges_to_add = nonexistant_edge_set[np.random.choice(nonexistant_edge_set.shape[0], size=num_edges_add, replace=False)]
             data.edge_index = torch.cat((data.edge_index, edges_to_add))
 
             data.validate()
