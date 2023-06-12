@@ -160,11 +160,12 @@ class ReduceDiameter(BaseTransform):
             for u, v in data.edge_index.t().tolist():
                 nx_graph.add_edge(u, v)
 
-        avg_edge_attribute = np.array(avg_edge_attribute)
-        avgs = []
-        for i in range(avg_edge_attribute.shape[1]):
-            avgs.append(avg_edge_attribute[:,i].mean())
-        self._avg_edge_attr = avgs
+        if data.edge_attr is not None:
+            avg_edge_attribute = np.array(avg_edge_attribute)
+            avgs = []
+            for i in range(avg_edge_attribute.shape[1]):
+                avgs.append(avg_edge_attribute[:,i].mean())
+            self._avg_edge_attr = avgs
 
         return nx_graph
 
