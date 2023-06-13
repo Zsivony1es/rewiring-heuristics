@@ -190,7 +190,6 @@ class ReduceDiameter(BaseTransform):
             G.add_edge(*longest_ind)
 
         self.edges_added += 1
-        print(f"Added {self.edges_added} so far...")
 
         return G
 
