@@ -6,7 +6,7 @@ from torch.nn import Module
 from torch_geometric.data import Dataset
 from torch_geometric.loader import DataLoader
 
-from rewiring.AbstractTrainingPipeline import AbstractTrainingPipeline
+from rewiring.pipeline.AbstractTrainingPipeline import AbstractTrainingPipeline
 
 
 class GraphClassificationPipeline(AbstractTrainingPipeline):
@@ -25,15 +25,14 @@ class GraphClassificationPipeline(AbstractTrainingPipeline):
         
 
     def single_train(self,
-              train_dloader: DataLoader,
-              ) -> float:
+                     train_data: Dataset | DataLoader) -> float:
         """
         Trains the model on a given dataset for a single epoch. Returns the training loss.
         """
         epoch_train_loss = []
 
-        self._model.train()
-        for batch in train_dloader:
+        self.model.train()
+        for batch in train_data:
             # Clear the gradients
             self.optimizer.zero_grad()
             # Forward Pass
@@ -50,7 +49,7 @@ class GraphClassificationPipeline(AbstractTrainingPipeline):
         return avg_loss
 
     def single_validate(self,
-                 val_dloader: DataLoader) -> tuple[float, float]:
+                 val_data: Dataset | DataLoader) -> tuple[float, float]:
         """
         Performs validation on the given dataset for a single epoch. Returns the validation loss and the accuracy.
         """
@@ -59,7 +58,7 @@ class GraphClassificationPipeline(AbstractTrainingPipeline):
 
         self.model.eval()
         
-        for batch in val_dloader:
+        for batch in val_data:
             with torch.no_grad():
                 out = self.model(batch.x.to(self.device), batch.edge_index.to(self.device), batch.batch.to(self.device))
                 val_loss = self.criterion(out, batch.y)
@@ -68,13 +67,13 @@ class GraphClassificationPipeline(AbstractTrainingPipeline):
                 correct += (pred == batch.y).float().sum().item()
         
         avg_loss = np.array(epoch_val_loss).mean().item()
-        acc = correct / len(val_dloader)
+        acc = correct / len(val_data.dataset)
 
         return (avg_loss, acc)
 
     def train_validate(self,
-                       train_dloader: DataLoader,
-                       val_dloader: DataLoader,
+                       train_data: DataLoader,
+                       val_data: DataLoader,
                        epochs: int,
                        log: bool = False) -> tuple[list[float], list[float], list[float]]:
         """
@@ -82,7 +81,7 @@ class GraphClassificationPipeline(AbstractTrainingPipeline):
         validation losses and the accuracy in each epoch respectively as a tuple. If log is set to True, it will display
         the progress.
         """
-        return super().train_validate(train_dloader=train_dloader,
-                                      val_dloader=val_dloader,
+        return super().train_validate(train_data=train_data,
+                                      val_dloader=val_data,
                                       epochs=epochs,
                                       log=log)
