@@ -1,5 +1,6 @@
 import torch
 import torch_geometric
+import numpy as np
 
 from torch.nn import Module
 from torch_geometric.data import Dataset
@@ -14,42 +15,74 @@ class GraphClassificationPipeline(AbstractTrainingPipeline):
                 model: Module,
                 criterion,
                 optimizer) -> None:
-        super().__init__()
+        """
+        Creates a pipeline designed to execute model training and evaluation for graph classification tasks.
+        """
+        super().__init__(device=device,
+                         model=model,
+                         criterion=criterion,
+                         optimizer=optimizer)
+        
 
     def single_train(self,
-              train_dset: Dataset | DataLoader) -> float:
+              train_dloader: DataLoader,
+              ) -> float:
         """
-        Trains the model on a given dataset for one epoch. Returns the training loss.
+        Trains the model on a given dataset for a single epoch. Returns the training loss.
         """
         epoch_train_loss = []
-        epoch_val_loss = []
 
-        ### TRAINING
         self._model.train()
         for batch in train_dloader:
             # Clear the gradients
-            optimizer.zero_grad()
+            self.optimizer.zero_grad()
             # Forward Pass
-            out = model(batch.x.to(device), batch.edge_index.to(device), batch.batch.to(device))
+            out = self.model(batch.x.to(self.device), batch.edge_index.to(self.device), batch.batch.to(self.device))
             # Find the Loss
-            train_loss = criterion(out, batch.y)
+            train_loss = self.criterion(out, batch.y)
             epoch_train_loss.append(train_loss.item())    
             # Calculate gradients
             train_loss.backward()
             # Update Weights
-            optimizer.step()
+            self.optimizer.step()
+
+        avg_loss = np.array(epoch_train_loss).mean().item()
+        return avg_loss
 
     def single_validate(self,
-                 val_dataset: Dataset) -> tuple[float, float]:
+                 val_dloader: DataLoader) -> tuple[float, float]:
         """
-        Performs validation on the given dataset a single time. Returns the validation loss and the accuracy.
+        Performs validation on the given dataset for a single epoch. Returns the validation loss and the accuracy.
         """
-        pass
+        correct = 0
+        epoch_val_loss = []
+
+        self.model.eval()
+        
+        for batch in val_dloader:
+            with torch.no_grad():
+                out = self.model(batch.x.to(self.device), batch.edge_index.to(self.device), batch.batch.to(self.device))
+                val_loss = self.criterion(out, batch.y)
+                epoch_val_loss.append(val_loss.item())
+                _, pred = torch.max(out.data, 1)
+                correct += (pred == batch.y).float().sum().item()
+        
+        avg_loss = np.array(epoch_val_loss).mean().item()
+        acc = correct / len(val_dloader)
+
+        return (avg_loss, acc)
 
     def train_validate(self,
-                       epochs: int) -> tuple[list[float], list[float], list[float]]:
+                       train_dloader: DataLoader,
+                       val_dloader: DataLoader,
+                       epochs: int,
+                       log: bool = False) -> tuple[list[float], list[float], list[float]]:
         """
         Performs training and validation :obj:`epochs` number of times, returns the training,
-        validation losses and the accuracy in each epoch respectively.
+        validation losses and the accuracy in each epoch respectively as a tuple. If log is set to True, it will display
+        the progress.
         """
-        pass
+        return super().train_validate(train_dloader=train_dloader,
+                                      val_dloader=val_dloader,
+                                      epochs=epochs,
+                                      log=log)
