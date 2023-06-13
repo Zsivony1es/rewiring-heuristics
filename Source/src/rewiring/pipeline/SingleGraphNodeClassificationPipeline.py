@@ -45,26 +45,27 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
         # Update Weights
         self.optimizer.step()
 
+        return train_loss.item()
+
     def single_validate(self,
                         val_data: Dataset | DataLoader) -> tuple[float, float]:
         """
         Performs validation on the given dataset for a single epoch. Returns the validation loss and the accuracy.
         """
         assert self.val_mask is not None, "Validation mask is not set! Please call :obj:`set_masks()` before executing training!"
-        assert self.val_mask != 0, "Validation mask is set to 0! Please call :obj:`set_masks()` with different parameters!"
-
 
         self.model.eval()
         with torch.no_grad():
             out = self.model(val_data.x.to(self.device), val_data.edge_index.to(self.device))
-            val_loss = self.criterion(out[val_mask], val_data.y[val_mask])
+            val_loss = self.criterion(out[self.val_mask], val_data.y[self.val_mask])
             _, pred = torch.max(out.data, 1)
-            correct = (pred[val_mask] == val_data.y[val_mask]).float().sum().item()
-            acc = correct / val_mask.shape[0]
+            correct = (pred[self.val_mask] == val_data.y[self.val_mask]).float().sum().item()
+            acc = correct / self.val_mask.shape[0]
+
+        return (val_loss.item(), acc)
 
     def train_validate(self,
-                       train_data: Dataset | DataLoader,
-                       val_data: Dataset | DataLoader,
+                       data: Dataset | DataLoader,
                        epochs: int,
                        log: bool = False) -> tuple[list[float], list[float], list[float]]:
         """
@@ -72,8 +73,9 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
         validation losses and the accuracy in each epoch respectively as a tuple. If log is set to True, it will display
         the progress.
         """
-        return super().train_validate(train_data=train_data,
-                                      val_data=val_data,
+
+        return super().train_validate(train_data=data,
+                                      val_data=data,
                                       epochs=epochs,
                                       log=log)
     

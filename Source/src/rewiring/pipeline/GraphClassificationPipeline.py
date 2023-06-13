@@ -1,3 +1,4 @@
+import logging
 import torch
 import torch_geometric
 import numpy as np
@@ -9,6 +10,7 @@ from torch_geometric.loader import DataLoader
 from rewiring.pipeline.AbstractTrainingPipeline import AbstractTrainingPipeline
 
 
+log = logging.getLogger(__name__)
 class GraphClassificationPipeline(AbstractTrainingPipeline):
     def __init__(self,
                 device: torch.device,
@@ -72,8 +74,8 @@ class GraphClassificationPipeline(AbstractTrainingPipeline):
         return (avg_loss, acc)
 
     def train_validate(self,
-                       train_data: DataLoader,
-                       val_data: DataLoader,
+                       train_data: Dataset | DataLoader,
+                       val_data: Dataset | DataLoader,
                        epochs: int,
                        log: bool = False) -> tuple[list[float], list[float], list[float]]:
         """
