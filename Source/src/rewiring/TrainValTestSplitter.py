@@ -17,15 +17,15 @@ class TrainValTestSplitter:
         Returns three tensors, corresponding to the training, validation and test masks.
         """
         match dataset_name.lower():
-            case 'cora': train_mask, val_mask, test_mask = TrainValTestSplitter._cora_split(dataset, val_size, test_size)
-            case _: train_mask, val_mask, test_mask = TrainValTestSplitter._default_split_mask(dataset, val_size, test_size)
+            case 'cora': train_mask, val_mask, test_mask = TrainValTestSplitter.single_graph_split(dataset, val_size, test_size)
+            case _: train_mask, val_mask, test_mask = TrainValTestSplitter.default_split_mask(dataset, val_size, test_size)
         return (train_mask, val_mask, test_mask)
     
-    def _cora_split(dset: InMemoryDataset, val_size: float, test_size: float):
+    def single_graph_split(dset: InMemoryDataset, val_size: float, test_size: float):
         """
-        Splitting method that is used specifically for the Planetoid-cora dataset.
+        Splitting method that is used for single graph datasets where node classification is the task. (e.g. Planetoid)
         """
-        log.debug(f"Proceeding with 'cora' splitting method")
+        log.debug(f"Proceeding with single graph splitting method")
 
         num_nodes = dset.y.shape[0]
 
@@ -64,7 +64,7 @@ class TrainValTestSplitter:
 
 
 
-    def _default_split_mask(data: Dataset | InMemoryDataset, val_size: float, test_size: float) -> tuple[Tensor, Tensor, Tensor]:
+    def default_split_mask(data: Dataset | InMemoryDataset, val_size: float, test_size: float) -> tuple[Tensor, Tensor, Tensor]:
         log.debug(f'Proceeding with default splitting')
         if len(data) == 1:
             data = data[0]

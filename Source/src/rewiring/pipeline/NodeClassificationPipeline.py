@@ -1,3 +1,4 @@
+import logging
 import torch
 import torch_geometric
 
@@ -8,6 +9,7 @@ from torch_geometric.loader import DataLoader
 from rewiring.pipeline.AbstractTrainingPipeline import AbstractTrainingPipeline
 
 
+log = logging.getLogger(__name__)
 class NodeClassifiactionPipeline(AbstractTrainingPipeline):
     def __init__(self,
                 device: torch.device,
