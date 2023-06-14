@@ -84,6 +84,6 @@ class GraphClassificationPipeline(AbstractTrainingPipeline):
         the progress.
         """
         return super().train_validate(train_data=train_data,
-                                      val_dloader=val_data,
+                                      val_data=val_data,
                                       epochs=epochs,
                                       log=log)

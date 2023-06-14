@@ -174,10 +174,14 @@ class SparseGraphBuilder(GraphGenerator):
                 node_i_features = vectors[i, :]
                 for j in range(num_dimensions):
                     component = node_features[j] + node_i_features[j]
-                    exponential = np.exp(component)
-                    last_feature += np.sin(exponential)
+                    sined = np.sin(component)
+                    last_feature += np.exp(sined)
 
-        return last_feature
+        # Map the scaled value to one of the values 0, 1, 2, 3, or 4
+        scaled_value = last_feature % 1
+        mapped_value = int(scaled_value * 5)
+
+        return mapped_value
         
 
 
