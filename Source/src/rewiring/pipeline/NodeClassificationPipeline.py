@@ -1,6 +1,7 @@
 import logging
 import torch
 import torch_geometric
+import numpy as np
 
 from torch.nn import Module
 from torch_geometric.data import Dataset
@@ -17,7 +18,7 @@ class NodeClassifiactionPipeline(AbstractTrainingPipeline):
                 criterion,
                 optimizer) -> None:
         """
-        Creates a pipeline designed to execute model training and evaluation for graph classification tasks.
+        Creates a pipeline designed to execute model training and evaluation for node classification tasks with multiple graphs in the dataset.
         """
         super().__init__(device=device,
                          model=model,
@@ -25,18 +26,57 @@ class NodeClassifiactionPipeline(AbstractTrainingPipeline):
                          optimizer=optimizer)
 
     def single_train(self,
-              train_dset: Dataset | DataLoader) -> float:
+                     train_data: Dataset | DataLoader) -> float:
         """
         Trains the model on a given dataset for one epoch. Returns the training loss.
         """
-        pass
+        assert isinstance(train_data, DataLoader)
+
+        train_loss = []
+
+        # Training loop
+        self.model.train()
+        total_loss = 0
+        for batch in train_data:
+            batch = batch.to(self.device)
+            self.optimizer.zero_grad()
+
+            out = self.model(batch.x, batch.edge_index)
+            loss = self.criterion(out, batch.y)
+            loss.backward()
+            train_loss.append(loss.item())
+
+            self.optimizer.step()
+
+        train_loss = np.array(train_loss).mean().item()
+
+        return train_loss
 
     def single_validate(self,
-                 val_dataset: Dataset | DataLoader) -> tuple[float, float]:
+                        val_data: Dataset | DataLoader) -> tuple[float, float]:
         """
         Performs validation on the given dataset a single time. Returns the validation loss and the accuracy.
         """
-        pass
+        assert isinstance(val_data, DataLoader)
+
+        val_loss = []
+        correct = 0
+        sum = len(val_data.dataset.y)
+
+        self.model.eval()
+        for batch in val_data:
+            batch = batch.to(self.device)
+            with torch.no_grad():
+                out = self.model(batch.x, batch.edge_index)
+                loss = self.criterion(out, batch.y)
+                val_loss.append(loss.item())
+                _, pred = torch.max(out.data, 1)
+                correct += (pred == batch.y).float().sum().item()
+
+        val_loss = np.array(val_loss).mean().item()
+        acc = correct / sum
+
+        return (val_loss, acc)
 
     def train_validate(self,
                        train_data: Dataset | DataLoader,

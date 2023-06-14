@@ -53,7 +53,7 @@ class AbstractTrainingPipeline(ABC):
         validation_loss = []
         accuracy = []
 
-        for epoch in range(epochs):
+        for epoch in range(1, epochs+1):
             # Training
             t_loss = self.single_train(train_data)
             training_loss.append(t_loss)
