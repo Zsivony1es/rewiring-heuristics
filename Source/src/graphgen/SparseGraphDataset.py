@@ -5,7 +5,6 @@ class SparseGraphDataset(InMemoryDataset):
     """An object representation of the synthetic datasets created by graphgen.GraphBuilder"""
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
         self._root: str = root
-        self.num_classes = 5
         super(SparseGraphDataset, self).__init__(root, transform, pre_transform, pre_filter)
 
     @property
