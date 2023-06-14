@@ -3,7 +3,9 @@ from torch_geometric.transforms import BaseTransform
 from torch_geometric.utils import is_undirected
 
 import numpy as np
+import networkx as nx
 import torch
+import random
 from math import ceil
 import logging
 
@@ -36,70 +38,168 @@ class AddRandomEdges(BaseTransform):
         self._rand_threshold = 0.1
         self._allow_self_loops = allow_self_loops
 
-    def __call__(self, data: Data | HeteroData) -> Data | HeteroData:
+        self._x = None
+        self._y = None
+        self._avg_edge_attr = None
+        self.edges_added = 0
 
+    def __call__(self, data: Data | HeteroData) -> Data | HeteroData:
         data.validate()
+        log.debug("Adding edges...")
+        G = self._to_networkx(data=data)
         
-        if is_undirected(data.edge_index):
-            complete_graph_edge_count = int((data.num_nodes * (data.num_nodes - 1))/2)
+        nodes = list(G.nodes)
+        existing_edges = set(G.edges)
+        num_nodes = len(nodes)
+
+        if data.is_undirected:
+            max_possible_edges = int((data.num_nodes * (num_nodes - 1)) / 2)
         else:
-            complete_graph_edge_count = int(data.num_nodes * (data.num_nodes - 1))
-        free_edge_spot_count = complete_graph_edge_count - data.num_edges
+            max_possible_edges = int(data.num_nodes * (data.num_nodes - 1))
+            
+        free_edge_spot_count = max_possible_edges - data.num_edges
 
         if self._num_edges_add == None and self._min_density != None:
-            num_edges_add = int(ceil(self._min_density * complete_graph_edge_count) - data.num_edges)
+            num_edges_add = int(ceil(self._min_density * max_possible_edges) - data.num_edges)
 
         if num_edges_add < 1:
             return data
 
         assert data.num_nodes > 1, "Graph only contains one node!"
         assert free_edge_spot_count >= num_edges_add, \
-            f"""There are not enough free edge spots in the graph! [{data.num_edges}/{complete_graph_edge_count}] \
+            f"""There are not enough free edge spots in the graph! [{data.num_edges}/{max_possible_edges}] \
 You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots remain! {data.num_nodes}"""
-
-        node_indices = data.edge_index.flatten().unique()
-
-        # Use random node selection approach if the graph is not very dense
-        # Otherwise runtime would be long AND indeterministic
-        # so we find all nodes that aren't connected and choose from them
         
-        if (free_edge_spot_count / complete_graph_edge_count) > self._rand_threshold:
-            
-            for _ in range(num_edges_add):
-                while True:
-                    # Get two node indices at random
-                    edge = node_indices[np.random.choice(node_indices.shape[0], size=2, replace=self._allow_self_loops)]
-                    # If the edge is not contained in the graph, we can break the loop and add it
-                    if not torch.eq(edge, data.edge_index.t()).all(1).any().item():
-                        break
-                # Add edge to graph
-                data.edge_index = torch.cat((data.edge_index, edge.unsqueeze(0).t()), dim=1)
+        new_num_edges = data.num_edges + num_edges_add
 
-            data.validate()
-            return data
-                
+        while len(existing_edges) < new_num_edges:
+            node1, node2 = random.sample(nodes, 2)
+            if (node1, node2) not in existing_edges and (node2, node1) not in existing_edges:
+                G.add_edge(node1, node2)
+                existing_edges.add((node1, node2))
+        
+        data = self._from_networkx(G=G)
+        data.validate()
+        
+        return data
+    
+    def _from_networkx(self, G) -> Data:
+        """Converts a NetworkX graph into a :obj:`torch_geometric.data.data.Data` object."""
+
+        if self._x is not None:
+            x = self._x
         else:
+            # Get node features
+            x = torch.tensor([G.nodes[n]['attr'] for n in G.nodes])
+            pass
+        
+        if self._y is not None:
+            y = self._y
+        else:
+            y = None
 
-            # Get edge set of complete graph
-            all_possible_edges = torch.cartesian_prod(node_indices, node_indices)
+        # Get edge indices, edge attributes, and edge directions
+        if not G.is_directed():
+            edge_list = []
+            for u, v in G.edges():
+                edge_list.append([u,v])
+                edge_list.append([v,u])
+        else:
+            edge_list = [[u, v] for u, v in G.edges]
+        edge_index = torch.tensor(edge_list).t().contiguous()
 
-            # Get edge set of complement graph
-            mask = torch.ones(len(all_possible_edges), dtype=torch.bool)
-            curr_edges = data.edge_index.t()
-            for i in range(curr_edges.shape[0]):
-                mask &= ~(all_possible_edges == curr_edges[i]).all(dim=1)
-            nonexistant_edge_set = all_possible_edges[mask]
+        has_attr_field = 'attr' in ([data for u, v, data in G.edges(data=True)][0].keys())
+        if has_attr_field:
+            edge_attrs = []
+            parsed_multiedges = []
+            for u, v in G.edges():
+                multi_edge_attributes = G.get_edge_data(u, v)
+                if 0 in multi_edge_attributes:
+                    # Graph has multiple edges here, each has its own attribute
+                    if (u, v) not in parsed_multiedges:
+                        for key in multi_edge_attributes:
+                            edge_attrs.append(multi_edge_attributes[key]['attr'])
+                        parsed_multiedges.append((u,v))
+                else:
+                    if 'attr' in multi_edge_attributes:
+                        edge_attrs.append(multi_edge_attributes['attr'])
+                    else:
+                        # For some reason a LRGB dataset has two edges (out of thousands) with no attribute data???
+                        # This would be a reason to throw an error, instead to get it to work I just set it to [0,0]
+                        edge_attrs.append([0,0])
+                        # raise RuntimeError(f"The edge ({u},{v}) doesn't have any attributes assigned!")
+            edge_attr = torch.tensor(edge_attrs)
+            data = Data(x=x, y=y, edge_index=edge_index, edge_attr=edge_attr, is_directed=G.is_directed())
+        else:
+            data = Data(x=x, y=y, edge_index=edge_index, is_directed=G.is_directed())
 
-            # Filter out self-looping edges
-            if not self._allow_self_loops:
-                nonexistant_edge_set = nonexistant_edge_set[nonexistant_edge_set[:, 0] != nonexistant_edge_set[:, 1]]
 
-            # Select the edges we want to add randomly
-            edges_to_add = nonexistant_edge_set[np.random.choice(nonexistant_edge_set.shape[0], size=num_edges_add, replace=False)]
-            data.edge_index = torch.cat((data.edge_index, edges_to_add))
+        return data
 
-            data.validate()
-            return data
+    def _to_networkx(self, data: Data) -> nx.Graph | nx.MultiGraph | nx.DiGraph | nx.MultiDiGraph:
+        """Converts a :obj:`torch_geometric.data.data.Data` object into a NetworkX graph."""
+
+        # Infer NetworkX graph type
+        is_directed = data.is_directed()
+        if AddRandomEdges._is_multigraph(data=data):
+            graph_class = nx.MultiDiGraph if is_directed else nx.MultiGraph
+            nx_graph = graph_class()
+        else:
+            graph_class = nx.DiGraph if is_directed else nx.Graph
+            nx_graph = graph_class()
+
+        # Save attributes, which won't be affected by rewiring
+        # They can be returned without any conversion in _from_networkx()
+        if data.x is not None:
+            self._x = data.x
+        if data.y is not None:
+            self._y = data.y
+
+        # Add nodes with features
+        for i, feat in enumerate(data.x):
+            nx_graph.add_node(i, attr=feat.tolist())
+
+        # Add edges with attributes (if they exist)
+        # Also I average out all edge attributes which will be used when inserting new edges
+        avg_edge_attribute = []
+
+        if data.edge_attr is not None:
+            edge_index = 0
+            for u, v in data.edge_index.t().tolist():
+                attribute = data.edge_attr[edge_index].tolist()
+                avg_edge_attribute.append(attribute)
+                nx_graph.add_edge(u, v, attr=attribute)
+                edge_index += 1
+        else:
+            for u, v in data.edge_index.t().tolist():
+                nx_graph.add_edge(u, v)
+
+        if data.edge_attr is not None:
+            avg_edge_attribute = np.array(avg_edge_attribute)
+            avgs = []
+            for i in range(avg_edge_attribute.shape[1]):
+                avgs.append(avg_edge_attribute[:,i].mean())
+            self._avg_edge_attr = avgs
+
+        return nx_graph
+    
+    def _is_multigraph(edge_index: torch.Tensor=None, data: Data=None) -> bool:
+        if data is not None:
+            edge_index = data.edge_index
+        elif edge_index is not None:
+            pass
+        else:
+            raise RuntimeError("Either edge_index or data must be set!")
+
+        num_cols = edge_index.size(1)
+        if num_cols < 2:
+            return False
+
+        edge_list = [(edge_index[0, i].item(), edge_index[1, i].item()) for i in range(edge_index.size(1))]
+        unique_edges = set(edge_list)
+
+        # If the lengths don't match then we filtered out multiple edges, which means it is a MultiGraph
+        return len(unique_edges) != len(edge_list)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(ratio_edges={self._min_density}, num_edges={self._num_edges_add}, allow_self_loops={self._allow_self_loops})"
