@@ -26,11 +26,9 @@ class GCN(nn.Module):
             assert batch is not None, "'batch' parameter must be set during graph classification task!"
             x_graph = torch_scatter.scatter_max(x, batch, dim=0)[0]
             out = self.fc_graph(x_graph)
-            return F.log_softmax(out, dim=1)
-
         elif self.classification_task == 'node':
             out = self.fc_node(x)
-            return F.log_softmax(out, dim=1)
-
         else:
             raise ValueError("Invalid classification task. Please set the classification task using the set_classification_task() method.")
+        
+        return F.log_softmax(out, dim=1)

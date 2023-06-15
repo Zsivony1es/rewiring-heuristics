@@ -26,6 +26,9 @@ class SparseGraphDataset(InMemoryDataset):
 
     def len(self) -> int:
         return len(self._graphs)
+    
+    def __len__(self) -> int:
+        return len(self._graphs)
 
     def get(self, idx):
         return self._graphs[idx]
