@@ -16,8 +16,8 @@ log = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description='Try out different rewiring techniques with different datasets and evaluate them.')
 parser.add_argument('--dataset_list', required=True, type=str, help="""List of datasets which should be used for training, use * to 
                     train a model for every available dataset, or enter a comma-separated list of datasets, e.g. cora,enzymes.
-                    \nAvailable options: sparse, cora, enzymes, amazon, ppi""")
-parser.add_argument('--model_type', required=True, type=str, choices=['GCN', 'GIN', 'GAT'], help='Options: GCN, GIN, GAT')
+                    \nAvailable options: cora, citeseer, proteins, mutag, enzymes, lrgb-pascal, synthetic""")
+parser.add_argument('--model_type', required=True, type=str, choices=['GCN', 'GAT'], help='Options: GCN, GAT')
 parser.add_argument('--rewiring', required=False, type=str, choices=['ARE', 'RD', 'GDC'], help='Options: ARE = AddRandomEdges, RD = ReduceDiameter, GDC = Graph Diffusion Convolution')
 parser.add_argument('--epochs', required=False, type=int, default=300, help='Set the amount of epochs each training cycle should include. Defaults to 300')
 parser.add_argument('--generate_plots', action='store_true', help='Set to output graph images to Source/out')

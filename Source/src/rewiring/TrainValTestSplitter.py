@@ -3,6 +3,8 @@ import torch
 import numpy as np
 from torch import Tensor
 from torch_geometric.data import Dataset, InMemoryDataset
+from torch_geometric.datasets import LRGBDataset
+from torch_geometric.transforms import BaseTransform
 from sklearn.model_selection import train_test_split
 
 log = logging.getLogger(__name__)
@@ -12,16 +14,33 @@ class TrainValTestSplitter:
     def __init__(self) -> None:
         pass
 
-    def split(dataset_name: str, dataset: Dataset | InMemoryDataset, val_size: float = 0.2, test_size: float = 1) -> tuple[Tensor, Tensor, Tensor]:
+    def mask_split(dataset_name: str, 
+                   dataset: Dataset | InMemoryDataset, 
+                   val_size: float = 0.2, 
+                   test_size: float = 1) -> tuple[Tensor, Tensor, Tensor]:
         """
-        Returns three tensors, corresponding to the training, validation and test masks.
+        Creates training, validation and test masks for a given dataset. Returns a tuple of these three tensors.
         """
         match dataset_name.lower():
-            case 'cora': train_mask, val_mask, test_mask = TrainValTestSplitter.single_graph_split(dataset, val_size, test_size)
-            case _: train_mask, val_mask, test_mask = TrainValTestSplitter.default_split_mask(dataset, val_size, test_size)
+            case 'cora': train_mask, val_mask, test_mask = TrainValTestSplitter._single_graph_split(dataset, val_size, test_size)
+            case _: train_mask, val_mask, test_mask = TrainValTestSplitter._default_split_mask(dataset, val_size, test_size)
         return (train_mask, val_mask, test_mask)
     
-    def single_graph_split(dset: InMemoryDataset, val_size: float, test_size: float):
+    def dataset_split(dataset_name: str, 
+                      dataset: Dataset | InMemoryDataset, 
+                      val_size: float = 0.2, 
+                      test_size: float = 1) -> tuple[Dataset, Dataset, Dataset]:
+        """
+        Creates training, validation and test dataset for a given dataset. Returns a tuple of the three datasets.
+        """
+        match dataset_name.lower():
+            case 'pascal': train, val, test = TrainValTestSplitter._pascal_split()
+
+        return (train, val, test)
+    
+    def _single_graph_split(dset: InMemoryDataset, 
+                           val_size: float, 
+                           test_size: float):
         """
         Splitting method that is used for single graph datasets where node classification is the task. (e.g. Planetoid)
         """
@@ -62,9 +81,7 @@ class TrainValTestSplitter:
 
         return (train_data, val_data, test_data)
 
-
-
-    def default_split_mask(data: Dataset | InMemoryDataset, val_size: float, test_size: float) -> tuple[Tensor, Tensor, Tensor]:
+    def _default_split_mask(data: Dataset | InMemoryDataset, val_size: float, test_size: float) -> tuple[Tensor, Tensor, Tensor]:
         log.debug(f'Proceeding with default splitting')
         if len(data) == 1:
             data = data[0]
@@ -80,3 +97,19 @@ class TrainValTestSplitter:
         log.debug(f'Test mask: {test_mask}')
 
         return (train_mask, val_mask, test_mask)
+    
+    def pascal_split(transform: BaseTransform) -> tuple[InMemoryDataset, InMemoryDataset, InMemoryDataset]:
+        train_dataset = LRGBDataset(root=f'Source/res/datasets/LRGB', 
+                                    name='PascalVOC-SP', 
+                                    split='train',
+                                    pre_transform=transform)
+        val_dataset = LRGBDataset(root=f'Source/res/datasets/LRGB', 
+                                  name='PascalVOC-SP', 
+                                  split='val', 
+                                  pre_transform=transform)
+        test_dataset = LRGBDataset(root=f'Source/res/datasets/LRGB', 
+                                   name='PascalVOC-SP', 
+                                   split='test', 
+                                   pre_transform=transform)
+
+        return(train_dataset, val_dataset, test_dataset)
