@@ -35,16 +35,14 @@ rewiring_options = {
     'GDC' : GDC(),
     None: None
 }
-
 rewiring = rewiring_options.get(cfg.rewiring, ValueError(f'Invalid rewiring setting: {cfg.rewiring}'))
-
-### Load datasets
-datasets = util.get_dataset_dictionary(dset_conf=cfg.dataset_list, rewiring=rewiring)
+dset_list = cfg.dataset_list.split(',')
 
 ### Initialize pipeline
 controller = PipelineController(
-    datasets=datasets,
+    datasets=cfg.dataset_list,
     model_abbr=cfg.model_type,
+    rewiring=rewiring,
     loss_function=torch.nn.NLLLoss(),
     epochs = cfg.epochs,
     generate_plots = cfg.generate_plots,

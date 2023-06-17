@@ -2,15 +2,23 @@ import torch
 from torch import nn
 import numpy as np
 import logging
-from typing import Any
+from typing import Any, Optional
 from math import floor
+
 
 from torch_geometric.data import Dataset, InMemoryDataset
 from torch_geometric.loader import DataLoader
+from torch_geometric.transforms import BaseTransform
+
+from rewiring.pipeline.GraphClassificationPipeline import GraphClassificationPipeline
+from rewiring.pipeline.SingleGraphNodeClassificationPipeline import SingleGraphNodeClassificationPipeline
+from rewiring.pipeline.NodeClassificationPipeline import NodeClassifiactionPipeline
+from rewiring.pipeline.DatasetManager import DatasetManager
+
 
 from rewiring.model.GAT import GAT
 from rewiring.model.GCN import GCN
-from rewiring.model.GIN import GIN
+from torch_geometric.nn import GIN
 
 from rewiring.PlotGenerator import PlotGenerator
 from rewiring.TrainValTestSplitter import TrainValTestSplitter
@@ -25,33 +33,53 @@ class PipelineController():
         loss_function - Any loss function from PyTorch. (default: torch.nn.NLLLoss())
         """
     
-    def __init__(self, datasets: dict, model_abbr: str, epochs: int, generate_plots, loss_function: Any = torch.nn.NLLLoss()) -> None:
+    def __init__(self, 
+                 datasets: list[str], 
+                 model_abbr: str,
+                 rewiring: Optional[BaseTransform], 
+                 epochs: int, 
+                 generate_plots, 
+                 loss_function: Any = None) -> None:
+        
         self._device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if generate_plots:
             self._plot_generator = PlotGenerator()
         else:
             self._plot_generator = None
-        self._datasets = datasets
+        self._dataset_manager = DatasetManager(datasets, rewiring)
         self._model_used = model_abbr
         self._models = self._init_models(model_abbr)
         self._optimizers = self._init_optimizers()
         self._epochs = epochs
-        self._loss_function = loss_function
-        pass
 
-    def _init_models(self, model_abbr: str) -> list[torch.nn.Module]:
+        if loss_function is None:
+            if model_abbr == 'GIN':
+                loss_function = nn.CrossEntropyLoss()
+            else: 
+                loss_function = nn.NLLLoss()
+
+        self._loss_function = loss_function
+
+
+    def _init_models(self, model_abbr: str) -> dict:
         log.info(f"Creating models with loaded datasets...")
         model_dict = {}
         for key, dset in self._datasets.items():
             match model_abbr:
-                case 'GAT': model_dict[key] = GAT(dset.num_features, 256, dset.num_classes)
-                case 'GIN': model_dict[key] = GIN(dset.num_features, dset.num_classes)
-                case 'GCN': model_dict[key] = GCN(dset.num_features, dset.num_classes)
+                case 'GAT': model_dict[key] = GAT(in_channels=dset.num_features, 
+                                                  hidden_channels=128, 
+                                                  out_channels=dset.num_classes)
+                case 'GIN': model_dict[key] = GIN(in_channels=dset.num_features,
+                                                  hidden_channels=16,
+                                                  num_layers=2,
+                                                  out_channels=dset.num_classes)
+                case 'GCN': model_dict[key] = GCN(num_features=dset.num_features, 
+                                                  num_classes=dset.num_classes)
                 case _: raise ValueError(f'Invalid model setting: {model_abbr}')
         log.info(f"Creating models DONE!")
         return model_dict
             
-    def _init_optimizers(self) -> list[torch.optim.Adam]:
+    def _init_optimizers(self) -> dict:
         opt = {}
         log.info(f"Creating optimizers...")
         log.debug(f"self._models: {self._models}")
@@ -59,66 +87,6 @@ class PipelineController():
             opt[key] = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=5e-4)
         log.info(f"Creating optimizers DONE!")
         return opt
-
-    def _train_node_task(
-            model: nn.Module, 
-            data: Dataset | InMemoryDataset, 
-            optimizer, 
-            criterion, 
-            num_epochs: int,
-            device,
-            train_mask: torch.Tensor, 
-            val_mask: torch.Tensor = None) -> tuple[nn.Module, list[float], list[float]]:
-        """Trains a model on a given dataset, with a train mask and an optional validation mask.
-        Returns a tuple of the trained model, a list of the training and validation losses."""
-        
-        train_losses = []
-        val_losses = []
-        acc_list = []
-
-        print(f"Beginning model training...")    
-        model.to(device)
-
-        for epoch in range(num_epochs):
-            ### TRAINING
-            model.train()
-            # Clear the gradients
-            optimizer.zero_grad()
-            # Forward Pass
-            out = model(data.x, data.edge_index)
-            # Find the Loss
-            train_loss = criterion(out[train_mask], data.y[train_mask])
-            train_losses.append(train_loss.item())
-            
-            # Calculate gradients
-            train_loss.backward()
-
-            # Update Weights
-            optimizer.step()
-
-            if val_mask is None:
-                if (epoch + 1) % 10 == 0:
-                    print(f"""Epoch: [{epoch+1}/{num_epochs}]
-                    Training loss: {train_loss.item():.4f}""")
-                continue
-
-            ### VALIDATION
-            model.eval()
-            with torch.no_grad():
-                out = model(data.x, data.edge_index)
-                val_loss = criterion(out[val_mask], data.y[val_mask])
-                val_losses.append(val_loss.item())
-                _, pred = torch.max(out.data, 1)
-                correct = (pred[val_mask] == data.y[val_mask]).float().sum().item()
-                acc = correct / val_mask.shape[0]
-                acc_list.append(acc)
-            
-            if (epoch + 1) % 10 == 0:
-                print(f"""Epoch: [{epoch+1}/{num_epochs}]
-                  Training loss: {train_loss.item():.4f},\t Validation loss: {val_loss.item():.4f}
-                  Accuracy: {acc}""")
-
-        return (model, train_losses, val_losses, acc_list)
         
     def train_test_dataset(self, dataset_name: str) -> tuple[list[float], list[float]]:
         r"""Train the model corresponding to the specified dataset.
@@ -128,72 +96,63 @@ class PipelineController():
             A tuple of two lists containing the loss measured in each epoch on the training and the validation set respectively, 
             so with 100 epochs, each list should be 100 in length."""
         
-        dset: Dataset | InMemoryDataset = self._datasets[dataset_name]
-        if dataset_name == 'cora':
-            dset = dset[0]
+        # Get model and optimizer
         model = self._models[dataset_name]
         optimizer = self._optimizers[dataset_name]
-        print(f"Beginning model training for {dataset_name}")
-
-        # Divide the dataset into training, validation and test sets
-        train_mask, val_mask, test_mask = TrainValTestSplitter.split(dataset_name=dataset_name, dataset=dset)
-
-        trained_model, train_loss, val_loss, accuracy_list = PipelineController._train_node_task(
-            model=model,
-            data=dset,
-            optimizer=optimizer,
-            criterion=self._loss_function,
-            num_epochs=self._epochs,
-            device=self._device,
-            train_mask=train_mask,
-            val_mask=val_mask)
         
-        self._models[dataset_name] = trained_model
-        model = trained_model
+        # Get dataset and its loader
+        if dataset_name.lower() in ['cora', 'citeseer']:
 
-        print(f"Model training for {dataset_name} finished!")
-        print(f"Evaluating {dataset_name} model on test set...")
-        loss, acc = PipelineController._evaluate(
-            model=trained_model, 
-            data=dset, 
-            test_mask=test_mask, 
-            criterion=self._loss_function)
-        
-        print(f"""  Test loss: {loss:.4f}
-          Accuracy: {acc}""")
+            if isinstance(model, GCN):
+                model.set_classification_task(task='node')
 
-        return (train_loss, val_loss, accuracy_list)
-    
-    def _evaluate(model: nn.Module, 
-                  data: Dataset | InMemoryDataset, 
-                  test_mask: torch.Tensor,
-                  criterion):
-        
-        model.eval()
-        with torch.no_grad():
-            out = model(data.x, data.edge_index)
-            loss = criterion(out[test_mask], data.y[test_mask])
-            _, pred = out.max(dim=1)
-            correct = (pred[test_mask] == data.y[test_mask]).float().sum().item()
-            acc = correct / test_mask.shape[0]
-        
-        return (loss.item(), acc) 
-    
+            pipeline = SingleGraphNodeClassificationPipeline(
+                device=self._device,
+                model=model,
+                criterion=self._loss_function,
+                optimizer=optimizer
+            )
 
-    def eval(self, dataset_name: str) -> None:
-        r"""Evaluate the model corresponding to the specified dataset.
-        Args:
-            dataset_name (required) - The name of the dataset for which the corresponding model should be evaluated."""
-        
-        model = self._models[dataset_name]
-        dset = self._datasets[dataset_name]
-        
-        model.eval()
-        _, pred = model(dset.x, dset.edge_index).max(dim=1)
-        correct = float(pred[dset.test_mask].eq(dset.y[dset.test_mask]).sum().item())
-        acc = correct / dset.test_mask.sum().item()
+            pipeline.set_masks(data=dataset)
+            
+        elif dataset_name.lower() in ['mutag', 'enzymes', 'proteins']:
 
-        print(f'Accuracy ({dset.name}): {acc}')
+            if isinstance(model, GCN):
+                model.set_classification_task(task='graph')
+
+            pipeline = GraphClassificationPipeline(
+                device=self._device,
+                model=model,
+                criterion=self._loss_function,
+                optimizer=optimizer
+            )
+        elif dataset_name.lower() in ['lrgb-pascal', 'synthetic']:
+
+            if isinstance(model, GCN):
+                model.set_classification_task(task='node')
+
+            pipeline = NodeClassifiactionPipeline(
+                device=self._device,
+                model=model,
+                criterion=self._loss_function,
+                optimizer=optimizer
+            )
+
+        else:
+            raise RuntimeError(f"Unknown dataset name: {dataset_name}")
+        
+        # Complete training
+        train_losses, val_losses, accuracy_list = pipeline.train_validate(
+            train_data=train_dloader,
+            val_data=val_dloader,
+            epochs=self._epochs,
+            log=True
+        )
+
+        # Extract trained model
+        self._models[dataset_name] = pipeline.model
+
+        return (train_losses, val_losses, accuracy_list)
 
     def train_all(self) -> None:
         r"""Train the models with all datasets."""
