@@ -99,8 +99,14 @@ class PipelineController():
         # Get model and optimizer
         model = self._models[dataset_name]
         optimizer = self._optimizers[dataset_name]
+
+        # Get dataset and the corresponding loaders
+        dataset = self._dataset_manager.datasets[dataset_name]
+        train_loader = self._dataset_manager.train_loader[dataset_name]
+        val_loader = self._dataset_manager.val_loader[dataset_name]
+        test_loader = self._dataset_manager.test_loader[dataset_name]
         
-        # Get dataset and its loader
+        # Get pipelines set up
         if dataset_name.lower() in ['cora', 'citeseer']:
 
             if isinstance(model, GCN):
@@ -141,31 +147,32 @@ class PipelineController():
         else:
             raise RuntimeError(f"Unknown dataset name: {dataset_name}")
         
-        # Complete training
-        train_losses, val_losses, accuracy_list = pipeline.train_validate(
-            train_data=train_dloader,
-            val_data=val_dloader,
-            epochs=self._epochs,
-            log=True
-        )
+        # Begin training
+        if dataset_name.lower() in ['cora', 'citeseer']:
+            train_losses, val_losses, accuracy_list = pipeline.train_validate(
+                data=dataset,
+                epochs=self._epochs,
+                log=True
+            )
+        else:
+            train_losses, val_losses, accuracy_list = pipeline.train_validate(
+                train_data=train_loader,
+                val_data=val_loader,
+                epochs=self._epochs,
+                log=True
+            )
 
         # Extract trained model
         self._models[dataset_name] = pipeline.model
 
-        return (train_losses, val_losses, accuracy_list)
+        # Evaluate on test dataset
+        if dataset_name.lower() in ['cora', 'citeseer']:
+            loss, acc = pipeline.single_validate(dataset_name)
+        else:
+            loss, acc = pipeline.single_validate(test_loader)
+        print(f"==== Results on test set ====\nLoss: {loss}\tAccuracy: {acc}")
 
-    def train_all(self) -> None:
-        r"""Train the models with all datasets."""
-        for key, _ in self._datasets.items():
-            (train_loss, val_loss) = self.train_dataset(dataset_name=key)
-            if self._plot_generator is not None:
-                self._plot_generator.generate_loss_plot(
-                    train_loss=train_loss,
-                    val_loss=val_loss,
-                    dset_name=key.title(),
-                    model_type=self._model_used)
-                
-    def eval_all(self) -> None:
-        r"""Evaluate the models on all datasets."""
-        for key, _ in self._datasets.items():
-            self.eval(key)
+        return (train_losses, val_losses, accuracy_list)
+    
+    def train_test_all(self):
+        pass
