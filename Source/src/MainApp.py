@@ -49,8 +49,12 @@ controller = PipelineController(
     generate_plots = cfg.generate_plots,
 )
 
+accuracies = {}
+
 for dataset_name in dataset_list:
   train_loss, val_loss, accuracy = controller.train_test_dataset(dataset_name)
+
+  accuracies[dataset_name] = accuracy
 
   if cfg.generate_plots:
     pg = PlotGenerator()
@@ -60,9 +64,10 @@ for dataset_name in dataset_list:
             val_loss=val_loss,
             dset_name=dataset_name,
             model_type=cfg.model_type)
-    pg.generate_accuracy_plot(
-      accuracy=accuracy,
+    
+pg.generate_accuracy_plot_multi(
+      accuracy=accuracies,
       dset_name=dataset_name,
       model_type=cfg.model_type
     )
-    pg.leave_last_n_plots(n=4)
+pg.leave_last_n_plots(n=4)

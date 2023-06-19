@@ -90,6 +90,6 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
         assert test_ratio > 0 and test_ratio <= 1, "The ratio of the test set to the whole dataset must be in (0,1]!"
 
         self.train_mask, self.val_mask, self.test_mask = \
-            TrainValTestSplitter.single_graph_split(data, 
+            TrainValTestSplitter._single_graph_split(data, 
                                                     val_size=val_ratio, 
                                                     test_size=test_ratio)

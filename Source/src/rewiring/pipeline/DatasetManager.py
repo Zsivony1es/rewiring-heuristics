@@ -14,7 +14,7 @@ class DatasetManager:
                  dataset_list: list[str],
                  transform = None) -> None:
         
-        self.datasets: dict = self._get_dataset_dict(dataset_list)
+        self.datasets: dict = self._get_dataset_dict(dataset_list, transform)
         train, val, test = self._get_loaders(dataset_list)
 
         self.train_loader = train
@@ -56,7 +56,7 @@ class DatasetManager:
             if dataset in ['cora', 'citeseer']:
                 # For cora and citeseer the training mask is used instead of a DataLoader object
                 # So no entries are created for them
-                pass
+                continue
             elif dataset in ['proteins', 'mutag', 'enzymes']:
                 train, val, test = self._get_tu_loaders(dataset)
             elif dataset == 'lrgb-pascal':

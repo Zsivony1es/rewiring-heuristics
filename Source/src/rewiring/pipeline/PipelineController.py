@@ -46,6 +46,7 @@ class PipelineController():
             self._plot_generator = PlotGenerator()
         else:
             self._plot_generator = None
+
         self._dataset_manager = DatasetManager(datasets, rewiring)
         self._model_used = model_abbr
         self._models = self._init_models(model_abbr)
@@ -64,7 +65,7 @@ class PipelineController():
     def _init_models(self, model_abbr: str) -> dict:
         log.info(f"Creating models with loaded datasets...")
         model_dict = {}
-        for key, dset in self._datasets.items():
+        for key, dset in self._dataset_manager.datasets.items():
             match model_abbr:
                 case 'GAT': model_dict[key] = GAT(in_channels=dset.num_features, 
                                                   hidden_channels=128, 
@@ -102,9 +103,6 @@ class PipelineController():
 
         # Get dataset and the corresponding loaders
         dataset = self._dataset_manager.datasets[dataset_name]
-        train_loader = self._dataset_manager.train_loader[dataset_name]
-        val_loader = self._dataset_manager.val_loader[dataset_name]
-        test_loader = self._dataset_manager.test_loader[dataset_name]
         
         # Get pipelines set up
         if dataset_name.lower() in ['cora', 'citeseer']:
@@ -123,6 +121,10 @@ class PipelineController():
             
         elif dataset_name.lower() in ['mutag', 'enzymes', 'proteins']:
 
+            train_loader = self._dataset_manager.train_loader[dataset_name]
+            val_loader = self._dataset_manager.val_loader[dataset_name]
+            test_loader = self._dataset_manager.test_loader[dataset_name]
+
             if isinstance(model, GCN):
                 model.set_classification_task(task='graph')
 
@@ -133,6 +135,10 @@ class PipelineController():
                 optimizer=optimizer
             )
         elif dataset_name.lower() in ['lrgb-pascal', 'synthetic']:
+
+            train_loader = self._dataset_manager.train_loader[dataset_name]
+            val_loader = self._dataset_manager.val_loader[dataset_name]
+            test_loader = self._dataset_manager.test_loader[dataset_name]
 
             if isinstance(model, GCN):
                 model.set_classification_task(task='node')
@@ -167,7 +173,7 @@ class PipelineController():
 
         # Evaluate on test dataset
         if dataset_name.lower() in ['cora', 'citeseer']:
-            loss, acc = pipeline.single_validate(dataset_name)
+            loss, acc = pipeline.single_validate(self._dataset_manager.datasets[dataset_name])
         else:
             loss, acc = pipeline.single_validate(test_loader)
         print(f"==== Results on test set ====\nLoss: {loss}\tAccuracy: {acc}")

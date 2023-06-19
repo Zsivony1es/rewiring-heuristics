@@ -49,6 +49,29 @@ class PlotGenerator:
         plt.savefig(self.out_path + filename)
         log.info(f"Saved figure to {self.out_path} as {filename}")
 
+    def generate_accuracy_plot_multi(self, 
+                                     accuracy: dict,
+                                     dset_name: str, 
+                                     model_type: str) -> None:
+        """
+        Creates one accuracy plot for the accuracy data of multiple models. The :param:`accuracy` dictionary should contain
+        the name of the dataset as a key and the list of accuracies corresponding to it as the value. 
+        """
+        print("Generating accuracy plot...")
+        plt.clf()
+        for key, val in accuracy.items():
+            plt.plot(val, label=key)
+        plt.legend()
+        plt.title(f'Accuracy measurments using a {model_type} model')
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+
+        timestamp = datetime.now()
+        timestamp_str = timestamp.strftime("%Y-%m-%d_%H:%M:%S")
+        filename = 'multiAccPlot_' + model_type + '_' + timestamp_str + '.png'
+        plt.savefig(self.out_path + filename)
+        log.info(f"Saved figure to {self.out_path} as {filename}")
+
     def leave_last_n_plots(self, n: int = 0):
         """
         Deletes all generated plot pictures from the specified folder, except for the last :param:`n` files (based on modification time).
