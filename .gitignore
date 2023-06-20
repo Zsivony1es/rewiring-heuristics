@@ -1,6 +1,6 @@
 /Model/*.lck
 /Model/*.bak_*
-!/Source/res/datasets/sparse_dset/raw_dset_list.pt
+!/Source/res/datasets/sparse_dset/*
 /Source/res/*
 /Source/out/plots/*
 /.vscode
