@@ -1,7 +1,7 @@
 import logging
 
 from torch_geometric import datasets
-from torch.utils.data import DataLoader
+from torch_geometric.loader import DataLoader
 
 from rewiring.TrainValTestSplitter import TrainValTestSplitter
 
@@ -32,9 +32,9 @@ class DatasetManager:
             match dset.lower().strip():
                 case 'cora': dsets['cora'] = datasets.Planetoid(root=f'{dset_base}/Planetoid', name='Cora', transform=rewiring)
                 case 'citeseer': dsets['citeseer'] = datasets.Planetoid(root=f'{dset_base}/Planetoid', name='CiteSeer', transform=rewiring)
-                case 'enzymes': dsets['enzymes'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='ENZYMES', transform=rewiring)
-                case 'proteins': dsets['proteins'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='PROTEINS', transform=rewiring)
-                case 'mutag': dsets['mutag'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='MUTAG', transform=rewiring)
+                case 'enzymes': dsets['enzymes'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='ENZYMES', transform=rewiring, use_node_attr=True, use_edge_attr=True)
+                case 'proteins': dsets['proteins'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='PROTEINS', transform=rewiring, use_node_attr=True, use_edge_attr=True)
+                case 'mutag': dsets['mutag'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='MUTAG', transform=rewiring, use_node_attr=True, use_edge_attr=True)
                 case 'synthetic': dsets['synthetic'] = SparseGraphDataset(root=f'{dset_base}/synthetic', transform=rewiring)
                 case 'lrgb-pascal': 
                     dsets['lrgb-pascal'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', transform=rewiring)
@@ -83,8 +83,8 @@ class DatasetManager:
         )
 
         train_dloader: DataLoader = DataLoader(train_dataset, 
-                                       shuffle=True, 
-                                       batch_size=64)
+                                               shuffle=True, 
+                                               batch_size=64)
 
         val_dloader: DataLoader = DataLoader(val_dataset, 
                                             shuffle=False, 
