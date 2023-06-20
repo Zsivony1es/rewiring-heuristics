@@ -19,7 +19,7 @@ class Utils:
         if input == "*":
             return available_datasets
         else:
-            dset_list = input.split(',')
+            dset_list = list(map(lambda str: str.strip(), input.split(',')))
 
         for entered_dset in dset_list:
             if entered_dset not in available_datasets:
