@@ -1,7 +1,8 @@
 /Model/*.lck
 /Model/*.bak_*
-!/Source/res/datasets/sparse_dset/*
-/Source/res/*
+/Source/res/datasets/LRGB
+/Source/res/datasets/Planetoid
+/Source/res/datasets/TUDataset
 /Source/out/plots/*
 /.vscode
 /.pytest_cache
