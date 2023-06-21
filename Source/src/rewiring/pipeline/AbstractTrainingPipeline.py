@@ -35,7 +35,7 @@ class AbstractTrainingPipeline(ABC):
 
     @abstractmethod
     def single_validate(self,
-                        val_data: Union[Dataset, DataLoader]) -> tuple[float, float]:
+                        val_data: Union[Dataset, DataLoader]) -> tuple:
         """
         Performs validation on the given dataset for a single epoch. Returns the validation loss and the accuracy.
         """
@@ -44,7 +44,7 @@ class AbstractTrainingPipeline(ABC):
                        train_data: Union[Dataset, DataLoader],
                        val_data: Union[Dataset, DataLoader],
                        epochs: int,
-                       log: bool = False) -> tuple[list[float], list[float], list[float]]:
+                       log: bool = False) -> tuple:
         """
         Performs training and validation :obj:`epochs` number of times, returns the training,
         validation losses and the accuracy in each epoch respectively as a tuple. If log is set to True, it will display
