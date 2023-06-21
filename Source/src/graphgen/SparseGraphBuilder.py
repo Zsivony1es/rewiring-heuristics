@@ -24,7 +24,7 @@ class SparseGraphBuilder(GraphGenerator):
                 OR
                     'edge_count': int
                 'edge_feature_dim': int,
-                'train_goal': 'node' | 'graph'
+                'train_goal': 'node' or 'graph'
             }
         """
         required_fields = ['directed', 'multiple_edges', 'loop_edges', 'node_count_lim', 'node_feature_dim', 'edge_feature_dim', 'train_goal']

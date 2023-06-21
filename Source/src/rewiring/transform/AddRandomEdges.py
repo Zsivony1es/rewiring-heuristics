@@ -6,6 +6,7 @@ import numpy as np
 import networkx as nx
 import torch
 import random
+from typing import Union
 from math import ceil
 import logging
 
@@ -43,7 +44,7 @@ class AddRandomEdges(BaseTransform):
         self._avg_edge_attr = None
         self.edges_added = 0
 
-    def __call__(self, data: Data | HeteroData) -> Data | HeteroData:
+    def __call__(self, data: Union[Data, HeteroData]) -> Union[Data, HeteroData]:
         data.validate()
         log.debug("Adding edges...")
         G = self._to_networkx(data=data)
@@ -136,7 +137,7 @@ You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots rem
 
         return data
 
-    def _to_networkx(self, data: Data) -> nx.Graph | nx.MultiGraph | nx.DiGraph | nx.MultiDiGraph:
+    def _to_networkx(self, data: Data) -> Union[nx.Graph, nx.MultiGraph, nx.DiGraph, nx.MultiDiGraph]:
         """Converts a :obj:`torch_geometric.data.data.Data` object into a NetworkX graph."""
 
         # Infer NetworkX graph type

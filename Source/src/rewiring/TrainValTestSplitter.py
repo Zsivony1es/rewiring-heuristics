@@ -1,6 +1,7 @@
 import logging
 import torch
 import numpy as np
+from typing import Union
 from torch import Tensor
 from torch_geometric.data import Dataset, InMemoryDataset
 from torch_geometric.datasets import LRGBDataset
@@ -15,7 +16,7 @@ class TrainValTestSplitter:
         pass
 
     def mask_split(dataset_name: str, 
-                   dataset: Dataset | InMemoryDataset, 
+                   dataset: Union[Dataset, InMemoryDataset], 
                    val_size: float = 0.2, 
                    test_size: float = 1) -> tuple[Tensor, Tensor, Tensor]:
         """
@@ -27,7 +28,7 @@ class TrainValTestSplitter:
         return (train_mask, val_mask, test_mask)
     
     def dataset_split(dataset_name: str, 
-                      dataset: Dataset | InMemoryDataset, 
+                      dataset: Union[Dataset, InMemoryDataset], 
                       val_size: float = 0.2, 
                       test_size: float = 1) -> tuple[Dataset, Dataset, Dataset]:
         """
@@ -62,9 +63,9 @@ class TrainValTestSplitter:
         return (train_mask, val_mask, test_mask)
     
     def graph_class_split(
-            data: Dataset | InMemoryDataset, 
+            data: Union[Dataset, InMemoryDataset], 
             val_size: float = 0.2, 
-            test_size: float = 1) -> tuple[Dataset | InMemoryDataset, Dataset | InMemoryDataset, Dataset | InMemoryDataset]:
+            test_size: float = 1) -> tuple[Union[Dataset, InMemoryDataset], Union[Dataset, InMemoryDataset], Union[Dataset, InMemoryDataset]]:
         """
         Splitting method for graph classification tasks, it doesn't return masks, but the actual separate datasets.
         """
@@ -81,7 +82,7 @@ class TrainValTestSplitter:
 
         return (train_data, val_data, test_data)
 
-    def _default_split_mask(data: Dataset | InMemoryDataset, val_size: float, test_size: float) -> tuple[Tensor, Tensor, Tensor]:
+    def _default_split_mask(data: Union[Dataset, InMemoryDataset], val_size: float, test_size: float) -> tuple[Tensor, Tensor, Tensor]:
         log.debug(f'Proceeding with default splitting')
         if len(data) == 1:
             data = data[0]

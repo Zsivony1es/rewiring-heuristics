@@ -2,6 +2,7 @@ import logging
 import torch
 import torch_geometric
 import numpy as np
+from typing import Union
 
 from torch.nn import Module
 from torch_geometric.data import Dataset
@@ -26,7 +27,7 @@ class NodeClassifiactionPipeline(AbstractTrainingPipeline):
                          optimizer=optimizer)
 
     def single_train(self,
-                     train_data: Dataset | DataLoader) -> float:
+                     train_data: Union[Dataset, DataLoader]) -> float:
         """
         Trains the model on a given dataset for one epoch. Returns the training loss.
         """
@@ -53,7 +54,7 @@ class NodeClassifiactionPipeline(AbstractTrainingPipeline):
         return train_loss
 
     def single_validate(self,
-                        val_data: Dataset | DataLoader) -> tuple[float, float]:
+                        val_data: Union[Dataset, DataLoader]) -> tuple[float, float]:
         """
         Performs validation on the given dataset a single time. Returns the validation loss and the accuracy.
         """
@@ -79,8 +80,8 @@ class NodeClassifiactionPipeline(AbstractTrainingPipeline):
         return (val_loss, acc)
 
     def train_validate(self,
-                       train_data: Dataset | DataLoader,
-                       val_data: Dataset | DataLoader,
+                       train_data: Union[Dataset, DataLoader],
+                       val_data: Union[Dataset, DataLoader],
                        epochs: int,
                        log: bool = False) -> tuple[list[float], list[float], list[float]]:
         """

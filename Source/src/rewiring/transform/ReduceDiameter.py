@@ -3,7 +3,7 @@ from torch_geometric.transforms import BaseTransform
 from torch_geometric.utils import from_networkx, to_networkx, is_undirected, contains_self_loops
 
 import networkx as nx
-from typing import Optional, Any
+from typing import Optional, Any, Union
 from math import floor
 import numpy as np
 import random
@@ -43,7 +43,7 @@ class ReduceDiameter(BaseTransform):
             self._max_diam = None
             self._min_density = min_density
 
-    def __call__(self, data: Data | HeteroData) -> Data | HeteroData:
+    def __call__(self, data: Union[Data, HeteroData]) -> Union[Data, HeteroData]:
 
         data.validate()
 
@@ -124,7 +124,7 @@ class ReduceDiameter(BaseTransform):
 
         return data
 
-    def _to_networkx(self, data: Data) -> nx.Graph | nx.MultiGraph | nx.DiGraph | nx.MultiDiGraph:
+    def _to_networkx(self, data: Data) -> Union[nx.Graph, nx.MultiGraph, nx.DiGraph, nx.MultiDiGraph]:
         """Converts a :obj:`torch_geometric.data.data.Data` object into a NetworkX graph."""
 
         # Infer NetworkX graph type

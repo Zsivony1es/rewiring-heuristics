@@ -1,6 +1,7 @@
 import logging
 import torch
 import numpy as np
+from typing import Union
 
 from torch.nn import Module
 from torch_geometric.data import Dataset, Data, InMemoryDataset
@@ -26,7 +27,7 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
         
 
     def single_train(self,
-                     train_data: Dataset | DataLoader) -> float:
+                     train_data: Union[Dataset, DataLoader]) -> float:
         """
         Trains the model on a given dataset for a single epoch. Returns the training loss.
         """
@@ -48,7 +49,7 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
         return train_loss.item()
 
     def single_validate(self,
-                        val_data: Dataset | DataLoader) -> tuple[float, float]:
+                        val_data: Union[Dataset, DataLoader]) -> tuple[float, float]:
         """
         Performs validation on the given dataset for a single epoch. Returns the validation loss and the accuracy.
         """
@@ -65,7 +66,7 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
         return (val_loss.item(), acc)
 
     def train_validate(self,
-                       data: Dataset | DataLoader,
+                       data: Union[Dataset, DataLoader],
                        epochs: int,
                        log: bool = False) -> tuple[list[float], list[float], list[float]]:
         """
@@ -80,7 +81,7 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
                                       log=log)
     
     def set_masks(self,
-                  data: InMemoryDataset | Dataset,
+                  data: Union[Dataset, InMemoryDataset],
                   val_ratio: float = 0.2,
                   test_ratio: float = 1) -> None:
         """
