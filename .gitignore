@@ -5,7 +5,7 @@
 /Source/res/datasets/TUDataset
 /Source/out/plots/*
 /.vscode
-/Source/res/.DS_Store
+/.DS_Store
 /.pytest_cache
 /.conda
 **/__pycache__
