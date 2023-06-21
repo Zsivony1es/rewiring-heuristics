@@ -9,11 +9,11 @@ class SparseGraphDataset(InMemoryDataset):
         self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
-    def raw_file_names(self) -> list[str]:
+    def raw_file_names(self) -> list:
         return ['raw_dset_list.pt']
     
     @property
-    def processed_file_names(self) -> list[str]:
+    def processed_file_names(self) -> list:
         return ['pre_filter.pt', 'pre_transform.pt', 'processed_dset_list.pt']
 
     def download(self) -> None:
@@ -22,7 +22,7 @@ class SparseGraphDataset(InMemoryDataset):
             Repository link: https://git01lab.cs.univie.ac.at/peteri00/rewiring-heuristics.git""")
 
     def process(self):
-        data_list: list[Data] = torch.load(f'{self.root}/{self.raw_file_names[0]}')
+        data_list: list = torch.load(f'{self.root}/{self.raw_file_names[0]}')
 
         if self.pre_filter is not None:
             data_list = [data for data in data_list if self.pre_filter(data)]

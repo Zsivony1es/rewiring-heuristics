@@ -11,7 +11,7 @@ from graphgen.SparseGraphDataset import SparseGraphDataset
 log = logging.getLogger(__name__)
 class DatasetManager:
     def __init__(self,
-                 dataset_list: list[str],
+                 dataset_list: list,
                  transform = None) -> None:
         
         self.datasets: dict = self._get_dataset_dict(dataset_list, transform)
@@ -22,7 +22,7 @@ class DatasetManager:
         self.test_loader = test
 
     def _get_dataset_dict(self,
-                          dataset_list: list[str],
+                          dataset_list: list,
                           rewiring) -> dict:
         dset_base = "Source/res/datasets"
 
@@ -53,7 +53,7 @@ class DatasetManager:
         return dsets
 
     def _get_loaders(self,
-                     dataset_list: list[str]) -> tuple[dict, dict, dict]:
+                     dataset_list: list) -> tuple:
         
         train_loader_dict = {}
         val_loader_dict = {}
@@ -82,7 +82,7 @@ class DatasetManager:
     
 
     def _get_tu_loaders(self, 
-                       dataset_name: str) -> tuple[dict, dict, dict]:
+                       dataset_name: str) -> tuple:
         
         train_dataset, val_dataset, test_dataset = TrainValTestSplitter.graph_class_split(
             self.datasets[dataset_name], 

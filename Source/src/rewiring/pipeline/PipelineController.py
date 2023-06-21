@@ -92,7 +92,7 @@ class PipelineController():
         log.info(f"Creating optimizers DONE!")
         return opt
         
-    def train_test_dataset(self, dataset_name: str) -> tuple[list[float], list[float]]:
+    def train_test_dataset(self, dataset_name: str) -> tuple:
         r"""Train the model corresponding to the specified dataset.
         Args:
             :param:`dataset_name` (required) - The name of the dataset for which the corresponding model should be trained.
