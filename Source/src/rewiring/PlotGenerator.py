@@ -13,8 +13,8 @@ class PlotGenerator:
         self.out_path = './Source/out/plots/'
 
     def generate_loss_plot(self, 
-                           train_loss: list[float], 
-                           val_loss: list[float], 
+                           train_loss: list, 
+                           val_loss: list, 
                            dset_name: str, 
                            model_type: str) -> None:
         print("Generating loss plot...")
@@ -33,7 +33,7 @@ class PlotGenerator:
         log.info(f"Saved figure to {self.out_path} as {filename}")
 
     def generate_accuracy_plot(self, 
-                               accuracy: list[float],
+                               accuracy: list,
                                dset_name: str, 
                                model_type: str) -> None:
         print("Generating accuracy plot...")

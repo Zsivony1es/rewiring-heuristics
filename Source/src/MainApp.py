@@ -49,6 +49,8 @@ controller = PipelineController(
     generate_plots = cfg.generate_plots,
 )
 
+print(f"Using device: {controller._device.type}")
+
 accuracies = {}
 
 for dataset_name in dataset_list:
