@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 
 def main():
     generator = SparseDatasetFileGenerator(graph_count=150)
-    generator.generate_dataset_files('Source/res/datasets/sparse_dset/raw_dset_list.pt')
+    generator.generate_dataset_files('Source/res/datasets/synthetic/raw_dset_list.pt')
     print("Graph generation done!")
 
 

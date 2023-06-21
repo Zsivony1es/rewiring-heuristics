@@ -4,8 +4,9 @@ from torch_geometric.data import InMemoryDataset, Data
 class SparseGraphDataset(InMemoryDataset):
     """An object representation of the synthetic datasets created by graphgen.GraphBuilder"""
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
-        self._root: str = root
         super(SparseGraphDataset, self).__init__(root, transform, pre_transform, pre_filter)
+        self.root: str = root
+        self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self) -> list[str]:
@@ -13,7 +14,7 @@ class SparseGraphDataset(InMemoryDataset):
     
     @property
     def processed_file_names(self) -> list[str]:
-        return ['processed_dset_list.pt']
+        return ['pre_filter.pt', 'pre_transform.pt', 'processed_dset_list.pt']
 
     def download(self) -> None:
         print("""This function shouldn't be called, the datasets should 
@@ -21,11 +22,13 @@ class SparseGraphDataset(InMemoryDataset):
             Repository link: https://git01lab.cs.univie.ac.at/peteri00/rewiring-heuristics.git""")
 
     def process(self):
-        graphs: list[Data] = torch.load(f'{self._root}/{self.raw_file_names[0]}')
-        self._graphs = graphs
+        data_list: list[Data] = torch.load(f'{self.root}/{self.raw_file_names[0]}')
 
-    def len(self) -> int:
-        return len(self._graphs)
+        if self.pre_filter is not None:
+            data_list = [data for data in data_list if self.pre_filter(data)]
 
-    def get(self, idx):
-        return self._graphs[idx]
+        if self.pre_transform is not None:
+            data_list = [self.pre_transform(data) for data in data_list]
+
+        data, slices = self.collate(data_list)
+        torch.save((data, slices), self.processed_paths[0])
