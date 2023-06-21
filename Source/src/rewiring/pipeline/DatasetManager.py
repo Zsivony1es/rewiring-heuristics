@@ -27,20 +27,28 @@ class DatasetManager:
         dset_base = "Source/res/datasets"
 
         log.info(f"Beginning to load datasets\tRoot: {dset_base}")
+
         dsets = {}
         for dset in dataset_list:
-            match dset.lower().strip():
-                case 'cora': dsets['cora'] = datasets.Planetoid(root=f'{dset_base}/Planetoid', name='Cora', transform=rewiring)
-                case 'citeseer': dsets['citeseer'] = datasets.Planetoid(root=f'{dset_base}/Planetoid', name='CiteSeer', transform=rewiring)
-                case 'enzymes': dsets['enzymes'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='ENZYMES', transform=rewiring, use_node_attr=True, use_edge_attr=True)
-                case 'proteins': dsets['proteins'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='PROTEINS', transform=rewiring, use_node_attr=True, use_edge_attr=True)
-                case 'mutag': dsets['mutag'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='MUTAG', transform=rewiring, use_node_attr=True, use_edge_attr=True)
-                case 'synthetic': dsets['synthetic'] = SparseGraphDataset(root=f'{dset_base}/synthetic', transform=rewiring)
-                case 'lrgb-pascal': 
-                    dsets['lrgb-pascal'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', transform=rewiring)
-                    dsets['lrgb-pascal_val'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', transform=rewiring, split='val')
-                    dsets['lrgb-pascal_test'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', transform=rewiring, split='test')
-                case _: raise ValueError(f'Invalid dataset setting: {dset}')
+            dset_trimmed = dset.lower().strip()
+            if dset_trimmed == 'cora': 
+                dsets['cora'] = datasets.Planetoid(root=f'{dset_base}/Planetoid', name='Cora', transform=rewiring)
+            elif dset_trimmed == 'citeseer': 
+                dsets['citeseer'] = datasets.Planetoid(root=f'{dset_base}/Planetoid', name='CiteSeer', transform=rewiring)
+            elif dset_trimmed == 'enzymes': 
+                dsets['enzymes'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='ENZYMES', transform=rewiring, use_node_attr=True, use_edge_attr=True)
+            elif dset_trimmed == 'proteins': 
+                dsets['proteins'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='PROTEINS', transform=rewiring, use_node_attr=True, use_edge_attr=True)
+            elif dset_trimmed == 'mutag': 
+                dsets['mutag'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='MUTAG', transform=rewiring, use_node_attr=True, use_edge_attr=True)
+            elif dset_trimmed == 'synthetic': 
+                dsets['synthetic'] = SparseGraphDataset(root=f'{dset_base}/synthetic', transform=rewiring)
+            elif dset_trimmed == 'lrgb-pascal': 
+                dsets['lrgb-pascal'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', transform=rewiring)
+                dsets['lrgb-pascal_val'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', transform=rewiring, split='val')
+                dsets['lrgb-pascal_test'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', transform=rewiring, split='test')
+            else:
+                raise ValueError(f'Invalid dataset setting: {dset}')
         print(f"Loading datasets DONE!")
         return dsets
 

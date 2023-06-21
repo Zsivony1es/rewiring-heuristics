@@ -5,12 +5,16 @@ class Utils:
     def get_rewiring_full_name(abbr: str) -> str:
         log.debug(f'Getting full name for {abbr}')
         rew_names = ['AddRandomEdges', 'ReduceDiameter', 'GraphDiffusionConvolution', 'None']
-        match abbr:
-            case 'ARE': return rew_names[0]
-            case 'RD': return rew_names[1]
-            case 'GDC': return rew_names[2]
-            case None: return rew_names[3]
-            case _: raise ValueError(f'Invalid abbreviation: {abbr}')
+        if abbr == 'ARE':
+            return rew_names[0]
+        elif abbr == 'RD': 
+            return rew_names[1]
+        elif abbr == 'GDC': 
+            return rew_names[2]
+        elif abbr is None: 
+            return rew_names[3]
+        else:
+            raise ValueError(f'Invalid abbreviation: {abbr}')
 
     def get_dataset_list(input: str) -> list[str]:
 

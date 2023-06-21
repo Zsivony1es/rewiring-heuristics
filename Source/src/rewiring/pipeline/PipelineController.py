@@ -66,17 +66,20 @@ class PipelineController():
         log.info(f"Creating models with loaded datasets...")
         model_dict = {}
         for key, dset in self._dataset_manager.datasets.items():
-            match model_abbr:
-                case 'GAT': model_dict[key] = GAT(in_channels=dset.num_features, 
+            if model_abbr == 'GAT': 
+                model_dict[key] = GAT(in_channels=dset.num_features, 
                                                   hidden_channels=128, 
                                                   out_channels=dset.num_classes)
-                case 'GIN': model_dict[key] = GIN(in_channels=dset.num_features,
+            elif model_abbr == 'GIN': 
+                model_dict[key] = GIN(in_channels=dset.num_features,
                                                   hidden_channels=16,
                                                   num_layers=2,
                                                   out_channels=dset.num_classes)
-                case 'GCN': model_dict[key] = GCN(num_features=dset.num_features, 
+            elif model_abbr == 'GCN': 
+                model_dict[key] = GCN(num_features=dset.num_features, 
                                                   num_classes=dset.num_classes)
-                case _: raise ValueError(f'Invalid model setting: {model_abbr}')
+            else:
+                raise ValueError(f'Invalid model setting: {model_abbr}')
         log.info(f"Creating models DONE!")
         return model_dict
             

@@ -22,9 +22,10 @@ class TrainValTestSplitter:
         """
         Creates training, validation and test masks for a given dataset. Returns a tuple of these three tensors.
         """
-        match dataset_name.lower():
-            case 'cora': train_mask, val_mask, test_mask = TrainValTestSplitter._single_graph_split(dataset, val_size, test_size)
-            case _: train_mask, val_mask, test_mask = TrainValTestSplitter._default_split_mask(dataset, val_size, test_size)
+        if dataset_name.lower() == 'cora':
+            train_mask, val_mask, test_mask = TrainValTestSplitter._single_graph_split(dataset, val_size, test_size)
+        else:
+            train_mask, val_mask, test_mask = TrainValTestSplitter._default_split_mask(dataset, val_size, test_size)
         return (train_mask, val_mask, test_mask)
     
     def dataset_split(dataset_name: str, 
@@ -34,8 +35,8 @@ class TrainValTestSplitter:
         """
         Creates training, validation and test dataset for a given dataset. Returns a tuple of the three datasets.
         """
-        match dataset_name.lower():
-            case 'pascal': train, val, test = TrainValTestSplitter._pascal_split()
+        if dataset_name.lower() == 'pascal': 
+            train, val, test = TrainValTestSplitter._pascal_split()
 
         return (train, val, test)
     
