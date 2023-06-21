@@ -18,7 +18,7 @@ class TrainValTestSplitter:
     def mask_split(dataset_name: str, 
                    dataset: Union[Dataset, InMemoryDataset], 
                    val_size: float = 0.2, 
-                   test_size: float = 1) -> tuple[Tensor, Tensor, Tensor]:
+                   test_size: float = 1) -> tuple:
         """
         Creates training, validation and test masks for a given dataset. Returns a tuple of these three tensors.
         """
@@ -31,7 +31,7 @@ class TrainValTestSplitter:
     def dataset_split(dataset_name: str, 
                       dataset: Union[Dataset, InMemoryDataset], 
                       val_size: float = 0.2, 
-                      test_size: float = 1) -> tuple[Dataset, Dataset, Dataset]:
+                      test_size: float = 1) -> tuple:
         """
         Creates training, validation and test dataset for a given dataset. Returns a tuple of the three datasets.
         """
@@ -66,7 +66,7 @@ class TrainValTestSplitter:
     def graph_class_split(
             data: Union[Dataset, InMemoryDataset], 
             val_size: float = 0.2, 
-            test_size: float = 1) -> tuple[Union[Dataset, InMemoryDataset], Union[Dataset, InMemoryDataset], Union[Dataset, InMemoryDataset]]:
+            test_size: float = 1) -> tuple:
         """
         Splitting method for graph classification tasks, it doesn't return masks, but the actual separate datasets.
         """
@@ -83,7 +83,7 @@ class TrainValTestSplitter:
 
         return (train_data, val_data, test_data)
 
-    def _default_split_mask(data: Union[Dataset, InMemoryDataset], val_size: float, test_size: float) -> tuple[Tensor, Tensor, Tensor]:
+    def _default_split_mask(data: Union[Dataset, InMemoryDataset], val_size: float, test_size: float) -> tuple:
         log.debug(f'Proceeding with default splitting')
         if len(data) == 1:
             data = data[0]
@@ -100,7 +100,7 @@ class TrainValTestSplitter:
 
         return (train_mask, val_mask, test_mask)
     
-    def pascal_split(transform: BaseTransform) -> tuple[InMemoryDataset, InMemoryDataset, InMemoryDataset]:
+    def pascal_split(transform: BaseTransform) -> tuple:
         train_dataset = LRGBDataset(root=f'Source/res/datasets/LRGB', 
                                     name='PascalVOC-SP', 
                                     split='train',
