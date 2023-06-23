@@ -67,7 +67,7 @@ class GraphClassificationPipeline(AbstractTrainingPipeline):
                 val_loss = self.criterion(out.to(self.device), batch.y.to(self.device))
                 epoch_val_loss.append(val_loss.item())
                 _, pred = torch.max(out.data.to(self.device), 1)
-                correct += (pred == batch.y).float().sum().item()
+                correct += (pred.to(self.device) == batch.y.to(self.device)).float().sum().item()
         
         avg_loss = np.array(epoch_val_loss).mean().item()
         acc = correct / len(val_data.dataset)
