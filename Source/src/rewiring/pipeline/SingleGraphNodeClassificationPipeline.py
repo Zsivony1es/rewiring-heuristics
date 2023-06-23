@@ -59,9 +59,9 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
         self.model.eval()
         with torch.no_grad():
             out = self.model(val_data.x.to(self.device), val_data.edge_index.to(self.device))
-            val_loss = self.criterion(out[self.val_mask], val_data.y[self.val_mask])
-            _, pred = torch.max(out.data, 1)
-            correct = (pred[self.val_mask] == val_data.y[self.val_mask]).float().sum().item()
+            val_loss = self.criterion(out[self.val_mask].to(self.device), val_data.y[self.val_mask].to(self.device))
+            _, pred = torch.max(out.data.to(self.device), 1)
+            correct = (pred[self.val_mask].to(self.device) == val_data.y[self.val_mask].to(self.device)).float().sum().item()
             acc = correct / self.val_mask.shape[0]
 
         return (val_loss.item(), acc)
