@@ -32,21 +32,21 @@ class DatasetManager:
         for dset in dataset_list:
             dset_trimmed = dset.lower().strip()
             if dset_trimmed == 'cora': 
-                dsets['cora'] = datasets.Planetoid(root=f'{dset_base}/Planetoid', name='Cora', transform=rewiring)
+                dsets['cora'] = datasets.Planetoid(root=f'{dset_base}/Planetoid', name='Cora', pre_transform=rewiring)
             elif dset_trimmed == 'citeseer': 
-                dsets['citeseer'] = datasets.Planetoid(root=f'{dset_base}/Planetoid', name='CiteSeer', transform=rewiring)
+                dsets['citeseer'] = datasets.Planetoid(root=f'{dset_base}/Planetoid', name='CiteSeer', pre_transform=rewiring)
             elif dset_trimmed == 'enzymes': 
-                dsets['enzymes'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='ENZYMES', transform=rewiring, use_node_attr=True, use_edge_attr=True)
+                dsets['enzymes'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='ENZYMES', pre_transform=rewiring, use_node_attr=True, use_edge_attr=True)
             elif dset_trimmed == 'proteins': 
-                dsets['proteins'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='PROTEINS', transform=rewiring, use_node_attr=True, use_edge_attr=True)
+                dsets['proteins'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='PROTEINS', pre_transform=rewiring, use_node_attr=True, use_edge_attr=True)
             elif dset_trimmed == 'mutag': 
-                dsets['mutag'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='MUTAG', transform=rewiring, use_node_attr=True, use_edge_attr=True)
+                dsets['mutag'] = datasets.TUDataset(root=f'{dset_base}/TUDataset', name='MUTAG', pre_transform=rewiring, use_node_attr=True, use_edge_attr=True)
             elif dset_trimmed == 'synthetic': 
-                dsets['synthetic'] = SparseGraphDataset(root=f'{dset_base}/synthetic', transform=rewiring)
+                dsets['synthetic'] = SparseGraphDataset(root=f'{dset_base}/synthetic', pre_transform=rewiring)
             elif dset_trimmed == 'lrgb-pascal': 
-                dsets['lrgb-pascal'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', transform=rewiring)
-                dsets['lrgb-pascal_val'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', transform=rewiring, split='val')
-                dsets['lrgb-pascal_test'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', transform=rewiring, split='test')
+                dsets['lrgb-pascal'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', pre_transform=rewiring)
+                dsets['lrgb-pascal_val'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', split='val')
+                dsets['lrgb-pascal_test'] = datasets.LRGBDataset(root=f'{dset_base}/LRGB', name='PascalVOC-SP', split='test')
             else:
                 raise ValueError(f'Invalid dataset setting: {dset}')
         print(f"Loading datasets DONE!")
