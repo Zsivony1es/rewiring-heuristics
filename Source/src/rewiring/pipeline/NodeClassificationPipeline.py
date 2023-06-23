@@ -36,14 +36,15 @@ class NodeClassifiactionPipeline(AbstractTrainingPipeline):
         train_loss = []
 
         # Training loop
-        self.model.train().to(self.device)
+        self.model.train()
+        self.model.to(self.device)
         total_loss = 0
         for batch in train_data:
             batch = batch.to(self.device)
             self.optimizer.zero_grad()
 
-            out = self.model(batch.x, batch.edge_index)
-            loss = self.criterion(out, batch.y)
+            out = self.model(batch.x.to(self.device), batch.edge_index.to(self.device))
+            loss = self.criterion(out.to(self.device), batch.y.to(self.device))
             loss.backward()
             train_loss.append(loss.item())
 
@@ -68,11 +69,11 @@ class NodeClassifiactionPipeline(AbstractTrainingPipeline):
         for batch in val_data:
             batch = batch.to(self.device)
             with torch.no_grad():
-                out = self.model(batch.x, batch.edge_index)
-                loss = self.criterion(out, batch.y)
+                out = self.model(batch.x.to(self.device), batch.edge_index.to(self.device))
+                loss = self.criterion(out.to(self.device), batch.y.to(self.device))
                 val_loss.append(loss.item())
-                _, pred = torch.max(out.data, 1)
-                correct += (pred == batch.y).float().sum().item()
+                _, pred = torch.max(out.data.to(self.device), 1)
+                correct += (pred.to(self.device) == batch.y.to(self.device)).float().sum().item()
 
         val_loss = np.array(val_loss).mean().item()
         acc = correct / sum
