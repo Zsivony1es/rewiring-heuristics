@@ -39,7 +39,7 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
         # Clear the gradients
         self.optimizer.zero_grad()
         # Forward Pass
-        out = self.model(train_data.x, train_data.edge_index)
+        out = self.model(train_data.x.to(self.device), train_data.edge_index.to(self.device))
         # Find the Loss
         train_loss = self.criterion(out[self.train_mask], train_data.y[self.train_mask])    
         # Calculate gradients
