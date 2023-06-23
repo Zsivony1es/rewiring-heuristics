@@ -41,7 +41,7 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
         # Forward Pass
         out = self.model(train_data.x.to(self.device), train_data.edge_index.to(self.device))
         # Find the Loss
-        train_loss = self.criterion(out[self.train_mask], train_data.y[self.train_mask])    
+        train_loss = self.criterion(out[self.train_mask].to(self.device), train_data.y[self.train_mask].to(self.device))    
         # Calculate gradients
         train_loss.backward()
         # Update Weights
