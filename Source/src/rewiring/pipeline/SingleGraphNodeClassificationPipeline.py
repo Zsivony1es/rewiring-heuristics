@@ -36,7 +36,6 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
 
         self.model.to(self.device)
         self.model.train()
-        train_data.to(self.device)
         # Clear the gradients
         self.optimizer.zero_grad()
         # Forward Pass
