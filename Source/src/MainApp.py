@@ -1,6 +1,7 @@
 import torch
 import logging
 import argparse
+import time
 from torch_geometric.transforms import GDC
 from rewiring.transform.AddRandomEdges import AddRandomEdges
 from rewiring.transform.ReduceDiameter import ReduceDiameter
@@ -54,7 +55,12 @@ print(f"Using device: {controller._device.type}")
 accuracies = {}
 
 for dataset_name in dataset_list:
+
+  start = time.perf_counter()
   train_loss, val_loss, accuracy = controller.train_test_dataset(dataset_name)
+  end = time.perf_counter()
+
+  print(f"Elapsed time: {end-start:.4f}s")
 
   accuracies[dataset_name] = accuracy
 
