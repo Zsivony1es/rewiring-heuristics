@@ -34,11 +34,12 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
 
         assert self.train_mask is not None, "Training mask is not set! Please call :obj:`set_masks()` before executing training!"
 
-        self.model.train()
+        self.model.train().to(self.device)
+        train_data.to(self.device)
         # Clear the gradients
         self.optimizer.zero_grad()
         # Forward Pass
-        out = self.model(train_data.x.to(self.device), train_data.edge_index.to(self.device))
+        out = self.model(train_data.x, train_data.edge_index)
         # Find the Loss
         train_loss = self.criterion(out[self.train_mask], train_data.y[self.train_mask])    
         # Calculate gradients

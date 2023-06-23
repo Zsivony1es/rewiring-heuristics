@@ -6,7 +6,7 @@ class SparseGraphDataset(InMemoryDataset):
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
         super(SparseGraphDataset, self).__init__(root, transform, pre_transform, pre_filter)
         self.root: str = root
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        self.data, self.slices = torch.load(self.processed_paths[2])
 
     @property
     def raw_file_names(self) -> list:
@@ -31,4 +31,4 @@ class SparseGraphDataset(InMemoryDataset):
             data_list = [self.pre_transform(data) for data in data_list]
 
         data, slices = self.collate(data_list)
-        torch.save((data, slices), self.processed_paths[0])
+        torch.save((data, slices), self.processed_paths[2])

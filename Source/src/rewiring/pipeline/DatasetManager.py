@@ -72,7 +72,7 @@ class DatasetManager:
                 val = DataLoader(self.datasets['lrgb-pascal_val'], batch_size=64, shuffle=False)
                 test = DataLoader(self.datasets['lrgb-pascal_test'], batch_size=64, shuffle=False)
             elif dataset == 'synthetic':
-                raise NotImplementedError("TODO: Get loaders for synthetic dataset")
+                train, val, test = self._get_tu_loaders(dataset)
 
             train_loader_dict[dataset] = train
             val_loader_dict[dataset] = val

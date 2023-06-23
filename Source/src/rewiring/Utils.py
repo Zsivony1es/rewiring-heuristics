@@ -16,7 +16,7 @@ class Utils:
         else:
             raise ValueError(f'Invalid abbreviation: {abbr}')
 
-    def get_dataset_list(input: str) -> list[str]:
+    def get_dataset_list(input: str) -> list:
 
         available_datasets = ['cora', 'citeseer', 'enzymes', 'proteins', 'mutag', 'lrgb-pascal', 'synthetic']
 

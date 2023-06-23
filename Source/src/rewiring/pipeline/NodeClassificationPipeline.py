@@ -36,7 +36,7 @@ class NodeClassifiactionPipeline(AbstractTrainingPipeline):
         train_loss = []
 
         # Training loop
-        self.model.train()
+        self.model.train().to(self.device)
         total_loss = 0
         for batch in train_data:
             batch = batch.to(self.device)
