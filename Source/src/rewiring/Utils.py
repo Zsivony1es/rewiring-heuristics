@@ -1,4 +1,6 @@
 import logging
+import shutil
+
 
 log = logging.getLogger(__name__)
 class Utils:
@@ -30,3 +32,25 @@ class Utils:
                 raise RuntimeError(f"Specified option for dataset: '{entered_dset}' does not exist!\nValid options: cora, enzymes, amazon, ppi")
 
         return dset_list
+    
+    def delete_processed_folder(dataset_name: str) -> None:
+        """
+        Deletes the processed folder of the entered dataset.
+        """
+        base_path = "Source/res/datasets"
+        if dataset_name.lower() in ['cora', 'citeseer']:
+            path = base_path + "/Planetoid/"
+            if dataset_name.lower() == 'cora':
+                path = path + "Cora"
+            else:
+                path = path + "CiteSeer"
+        elif dataset_name.lower() in ['proteins', 'mutag', 'enzymes']:
+            path = base_path + f"/TUDataset/{dataset_name.upper()}"
+        elif dataset_name.lower() == 'lrgb-pascal':
+            path = base_path + "/LRGB"
+        elif dataset_name.lower() == 'synthetic':
+            path = base_path + "/synthetic"
+
+        path = path + "/processed"
+
+        shutil.rmtree(path)

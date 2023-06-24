@@ -33,8 +33,8 @@ print(f"""Parsed arguments:\n  Model type:\t\t {cfg.model_type}\n  Used datasets
 
 ### Define transformation
 rewiring_options = {
-    'ARE': AddRandomEdges(),
-    'RD': ReduceDiameter(max_diam=3),
+    'ARE': AddRandomEdges(min_density=0.2),
+    'RD': ReduceDiameter(max_diam=25),
     'GDC' : GDC(),
     None: None
 }
@@ -72,6 +72,9 @@ for dataset_name in dataset_list:
             val_loss=val_loss,
             dset_name=dataset_name,
             model_type=cfg.model_type)
+  
+  Utils.delete_processed_folder(dataset_name)
+
     
 pg.generate_accuracy_plot_multi(
       accuracy=accuracies,

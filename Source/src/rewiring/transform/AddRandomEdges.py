@@ -1,6 +1,6 @@
 from torch_geometric.data import Data, HeteroData
 from torch_geometric.transforms import BaseTransform
-from torch_geometric.utils import is_undirected
+from torch_geometric.utils import is_undirected, from_networkx, to_networkx
 
 import numpy as np
 import networkx as nx
@@ -47,7 +47,7 @@ class AddRandomEdges(BaseTransform):
     def __call__(self, data: Union[Data, HeteroData]) -> Union[Data, HeteroData]:
         data.validate()
         log.debug("Adding edges...")
-        G = self._to_networkx(data=data)
+        G = to_networkx(data)
         
         nodes = list(G.nodes)
         existing_edges = set(G.edges)
@@ -73,7 +73,7 @@ You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots rem
         
         new_num_edges = data.num_edges + num_edges_add
         
-        if new_num_edges / max_possible_edges > 0.3:
+        if new_num_edges / max_possible_edges > 0.1:
             # If the graph is dense enough, then randomly sampling edges won't be as successful
             # So I compute the complement graph and add the new edges from that.
             G_c = nx.complement(G)
@@ -86,8 +86,10 @@ You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots rem
                 if (node1, node2) not in existing_edges and (node2, node1) not in existing_edges:
                     G.add_edge(node1, node2)
                     existing_edges.add((node1, node2))
+
+        assert G.number_of_edges() == new_num_edges
         
-        data = self._from_networkx(G=G)
+        data = from_networkx(G)
         data.validate()
         
         return data
