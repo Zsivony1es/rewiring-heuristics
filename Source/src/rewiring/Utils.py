@@ -47,7 +47,7 @@ class Utils:
         elif dataset_name.lower() in ['proteins', 'mutag', 'enzymes']:
             path = base_path + f"/TUDataset/{dataset_name.upper()}"
         elif dataset_name.lower() == 'lrgb-pascal':
-            path = base_path + "/LRGB"
+            path = base_path + "/LRGB/pascalvoc-sp"
         elif dataset_name.lower() == 'synthetic':
             path = base_path + "/synthetic"
 
