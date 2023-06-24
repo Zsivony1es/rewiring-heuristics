@@ -72,12 +72,20 @@ class AddRandomEdges(BaseTransform):
 You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots remain! {data.num_nodes}"""
         
         new_num_edges = data.num_edges + num_edges_add
-
-        while len(existing_edges) < new_num_edges:
-            node1, node2 = random.sample(nodes, 2)
-            if (node1, node2) not in existing_edges and (node2, node1) not in existing_edges:
-                G.add_edge(node1, node2)
-                existing_edges.add((node1, node2))
+        
+        if new_num_edges / max_possible_edges > 0.3:
+            # If the graph is dense enough, then randomly sampling edges won't be as successful
+            # So I compute the complement graph and add the new edges from that.
+            G_c = nx.complement(G)
+            new_edges = random.sample(list(G_c.edges), num_edges_add)
+            for u, v in new_edges:
+                G.add_edge(u, v)
+        else:
+            while len(existing_edges) < new_num_edges:
+                node1, node2 = random.sample(nodes, 2)
+                if (node1, node2) not in existing_edges and (node2, node1) not in existing_edges:
+                    G.add_edge(node1, node2)
+                    existing_edges.add((node1, node2))
         
         data = self._from_networkx(G=G)
         data.validate()
