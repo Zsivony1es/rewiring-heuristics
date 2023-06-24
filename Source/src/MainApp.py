@@ -81,4 +81,4 @@ pg.generate_accuracy_plot_multi(
       dset_name=dataset_name,
       model_type=cfg.model_type
     )
-pg.leave_last_n_plots(n=4)
+pg.leave_last_n_plots(n=10)
