@@ -54,27 +54,29 @@ print(f"Using device: {controller._device.type}")
 
 accuracies = {}
 
-for dataset_name in dataset_list:
+try:
+  for dataset_name in dataset_list:
 
-  start = time.perf_counter()
-  train_loss, val_loss, accuracy = controller.train_test_dataset(dataset_name)
-  end = time.perf_counter()
+    start = time.perf_counter()
+    train_loss, val_loss, accuracy = controller.train_test_dataset(dataset_name)
+    end = time.perf_counter()
 
-  print(f"Elapsed time: {end-start:.4f}s")
+    print(f"Elapsed time: {end-start:.4f}s")
 
-  accuracies[dataset_name] = accuracy
+    accuracies[dataset_name] = accuracy
 
-  if cfg.generate_plots:
-    pg = PlotGenerator()
+    if cfg.generate_plots:
+      pg = PlotGenerator()
 
-    pg.generate_loss_plot(
-            train_loss=train_loss,
-            val_loss=val_loss,
-            dset_name=dataset_name,
-            model_type=cfg.model_type)
-  
-  Utils.delete_processed_folder(dataset_name)
-
+      pg.generate_loss_plot(
+              train_loss=train_loss,
+              val_loss=val_loss,
+              dset_name=dataset_name,
+              model_type=cfg.model_type)
+    
+    Utils.delete_processed_folder(dataset_name)
+except Exception as e:
+  print(f"Caught exception: {str(e)}")
     
 pg.generate_accuracy_plot_multi(
       accuracy=accuracies,
