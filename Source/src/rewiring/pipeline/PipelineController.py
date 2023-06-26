@@ -110,8 +110,7 @@ class PipelineController():
         # Get pipelines set up
         if dataset_name.lower() in ['cora', 'citeseer']:
 
-            if isinstance(model, GCN):
-                model.set_classification_task(task='node')
+            model.set_classification_task(task='node')
 
             pipeline = SingleGraphNodeClassificationPipeline(
                 device=self._device,
@@ -128,8 +127,7 @@ class PipelineController():
             val_loader = self._dataset_manager.val_loader[dataset_name]
             test_loader = self._dataset_manager.test_loader[dataset_name]
 
-            if isinstance(model, GCN):
-                model.set_classification_task(task='graph')
+            model.set_classification_task(task='graph')
 
             pipeline = GraphClassificationPipeline(
                 device=self._device,
@@ -143,8 +141,7 @@ class PipelineController():
             val_loader = self._dataset_manager.val_loader[dataset_name]
             test_loader = self._dataset_manager.test_loader[dataset_name]
 
-            if isinstance(model, GCN):
-                model.set_classification_task(task='node')
+            model.set_classification_task(task='node')
 
             pipeline = NodeClassifiactionPipeline(
                 device=self._device,

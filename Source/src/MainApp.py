@@ -76,11 +76,12 @@ try:
     
     Utils.delete_processed_folder(dataset_name)
 except Exception as e:
-  print(f"Caught exception: {str(e)}")
-    
-pg.generate_accuracy_plot_multi(
-      accuracy=accuracies,
-      dset_name=dataset_name,
-      model_type=cfg.model_type
-    )
-pg.leave_last_n_plots(n=10)
+  print(f"Caught exception: {str(e.with_traceback)}")
+
+if cfg.generate_plots:    
+  pg.generate_accuracy_plot_multi(
+        accuracy=accuracies,
+        dset_name=dataset_name,
+        model_type=cfg.model_type
+      )
+  pg.leave_last_n_plots(n=10)
