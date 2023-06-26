@@ -39,7 +39,8 @@ class NodeClassifiactionPipeline(AbstractTrainingPipeline):
         self.model.train()
         self.model.to(self.device)
         total_loss = 0
-        for batch in train_data:
+        for ind, batch in enumerate(train_data):
+            print(f"Batch [{ind}/{len(train_data)}]")
             batch = batch.to(self.device)
             self.optimizer.zero_grad()
 

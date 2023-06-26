@@ -9,6 +9,7 @@ from math import floor
 from torch_geometric.data import Dataset, InMemoryDataset
 from torch_geometric.loader import DataLoader
 from torch_geometric.transforms import BaseTransform
+from torch_geometric.nn import GAT
 
 from rewiring.pipeline.GraphClassificationPipeline import GraphClassificationPipeline
 from rewiring.pipeline.SingleGraphNodeClassificationPipeline import SingleGraphNodeClassificationPipeline
@@ -16,7 +17,7 @@ from rewiring.pipeline.NodeClassificationPipeline import NodeClassifiactionPipel
 from rewiring.pipeline.DatasetManager import DatasetManager
 
 
-from rewiring.model.GAT import GAT
+# from rewiring.model.GAT import GAT
 from rewiring.model.GCN import GCN
 from torch_geometric.nn import GIN
 
@@ -68,8 +69,9 @@ class PipelineController():
         for key, dset in self._dataset_manager.datasets.items():
             if model_abbr == 'GAT': 
                 model_dict[key] = GAT(in_channels=dset.num_features, 
-                                                  hidden_channels=128, 
-                                                  out_channels=dset.num_classes)
+                                      num_layers=4,
+                                      hidden_channels=128, 
+                                      out_channels=dset.num_classes)
             elif model_abbr == 'GIN': 
                 model_dict[key] = GIN(in_channels=dset.num_features,
                                                   hidden_channels=16,
@@ -110,7 +112,8 @@ class PipelineController():
         # Get pipelines set up
         if dataset_name.lower() in ['cora', 'citeseer']:
 
-            model.set_classification_task(task='node')
+            if isinstance(model, GCN):
+                model.set_classification_task(task='node')
 
             pipeline = SingleGraphNodeClassificationPipeline(
                 device=self._device,
@@ -127,7 +130,8 @@ class PipelineController():
             val_loader = self._dataset_manager.val_loader[dataset_name]
             test_loader = self._dataset_manager.test_loader[dataset_name]
 
-            model.set_classification_task(task='graph')
+            if isinstance(model, GCN):
+                model.set_classification_task(task='graph')
 
             pipeline = GraphClassificationPipeline(
                 device=self._device,
@@ -141,7 +145,8 @@ class PipelineController():
             val_loader = self._dataset_manager.val_loader[dataset_name]
             test_loader = self._dataset_manager.test_loader[dataset_name]
 
-            model.set_classification_task(task='node')
+            if isinstance(model, GCN):
+                model.set_classification_task(task='node')
 
             pipeline = NodeClassifiactionPipeline(
                 device=self._device,

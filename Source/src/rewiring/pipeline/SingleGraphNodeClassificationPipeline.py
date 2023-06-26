@@ -54,7 +54,7 @@ class SingleGraphNodeClassificationPipeline(AbstractTrainingPipeline):
         """
         Performs validation on the given dataset for a single epoch. Returns the validation loss and the accuracy.
         """
-        assert self.val_mask is not None, "Validation mask is not set! Please call :obj:`set_masks()` before executing training!"
+        assert self.val_mask is not None, "Validation mask is not set! Please call :obj:`masks()` before executing training!"
 
         self.model.eval()
         with torch.no_grad():

@@ -2,6 +2,7 @@ import torch
 import logging
 import argparse
 import time
+import types
 from torch_geometric.transforms import GDC
 from rewiring.transform.AddRandomEdges import AddRandomEdges
 from rewiring.transform.ReduceDiameter import ReduceDiameter
@@ -54,6 +55,10 @@ print(f"Using device: {controller._device.type}")
 
 accuracies = {}
 
+pg = None
+if cfg.generate_plots:
+  pg = PlotGenerator()
+
 try:
   for dataset_name in dataset_list:
 
@@ -64,10 +69,8 @@ try:
     print(f"Elapsed time: {end-start:.4f}s")
 
     accuracies[dataset_name] = accuracy
-
+    
     if cfg.generate_plots:
-      pg = PlotGenerator()
-
       pg.generate_loss_plot(
               train_loss=train_loss,
               val_loss=val_loss,
@@ -76,7 +79,7 @@ try:
     
     Utils.delete_processed_folder(dataset_name)
 except Exception as e:
-  print(f"Caught exception: {str(e.with_traceback)}")
+  log.exception(e)
 
 if cfg.generate_plots:    
   pg.generate_accuracy_plot_multi(
