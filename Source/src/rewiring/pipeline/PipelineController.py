@@ -55,7 +55,7 @@ class PipelineController():
         self._epochs = epochs
 
         if loss_function is None:
-            if model_abbr == 'GIN':
+            if model_abbr == 'GIN' or model_abbr == 'GAT':
                 loss_function = nn.CrossEntropyLoss()
             else: 
                 loss_function = nn.NLLLoss()
