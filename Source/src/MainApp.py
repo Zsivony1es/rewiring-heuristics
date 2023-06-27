@@ -20,7 +20,7 @@ parser.add_argument('--dataset_list', required=True, type=str, help="""List of d
                     train a model for every available dataset, or enter a comma-separated list of datasets, e.g. 'cora,enzymes'.
                     Make sure to add ' to the beginning and the end of this parameter no matter how you set it!
                     \nAvailable options: cora, citeseer, proteins, mutag, enzymes, lrgb-pascal, synthetic""")
-parser.add_argument('--model_type', required=True, type=str, choices=['GCN', 'GAT'], help='Options: GCN, GAT')
+parser.add_argument('--model_type', required=True, type=str, choices=['GCN', 'GAT', 'GIN'], help='Options: GCN, GAT, GIN')
 parser.add_argument('--rewiring', required=False, type=str, choices=['ARE', 'RD', 'GDC'], help='Options: ARE = AddRandomEdges, RD = ReduceDiameter, GDC = Graph Diffusion Convolution')
 parser.add_argument('--epochs', required=False, type=int, default=300, help='Set the amount of epochs each training cycle should include. Defaults to 300')
 parser.add_argument('--generate_plots', action='store_true', help='Set to output graph images to Source/out')
