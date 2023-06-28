@@ -47,31 +47,37 @@ class AddRandomEdges(BaseTransform):
     def __call__(self, data: Union[Data, HeteroData]) -> Union[Data, HeteroData]:
         data.validate()
         log.debug("Adding edges...")
+        labels = data.y
+        nodes = data.x
+
         G = to_networkx(data)
         
         nodes = list(G.nodes)
         existing_edges = set(G.edges)
         num_nodes = len(nodes)
+        num_edges = len(existing_edges)
 
         if data.is_undirected:
-            max_possible_edges = int((data.num_nodes * (num_nodes - 1)) / 2)
+            max_possible_edges = int((num_nodes * (num_nodes - 1)) / 2)
         else:
-            max_possible_edges = int(data.num_nodes * (data.num_nodes - 1))
+            max_possible_edges = int(num_nodes * (num_nodes - 1))
             
         free_edge_spot_count = max_possible_edges - data.num_edges
 
+        # Calculate number of edges to add based on minimum density
         if self._num_edges_add == None and self._min_density != None:
             num_edges_add = int(ceil(self._min_density * max_possible_edges) - data.num_edges)
 
+        # Return if no edges should be added
         if num_edges_add < 1:
             return data
 
-        assert data.num_nodes > 1, "Graph only contains one node!"
+        assert num_nodes > 1, "Graph only contains one node!"
         assert free_edge_spot_count >= num_edges_add, \
-            f"""There are not enough free edge spots in the graph! [{data.num_edges}/{max_possible_edges}] \
-You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots remain! {data.num_nodes}"""
+            f"""There are not enough free edge spots in the graph! [{num_edges}/{max_possible_edges}] \
+You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots remain! {num_nodes}"""
         
-        new_num_edges = data.num_edges + num_edges_add
+        new_num_edges = num_edges + num_edges_add
         
         if new_num_edges / max_possible_edges > 0.1:
             # If the graph is dense enough, then randomly sampling edges won't be as successful
@@ -90,6 +96,9 @@ You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots rem
         assert G.number_of_edges() == new_num_edges
         
         data = from_networkx(G)
+        data.y = labels
+        data.x = nodes
+        data.num_nodes = num_nodes
         data.validate()
         
         return data

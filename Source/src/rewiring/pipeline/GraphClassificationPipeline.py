@@ -39,7 +39,7 @@ class GraphClassificationPipeline(AbstractTrainingPipeline):
             # Clear the gradients
             self.optimizer.zero_grad()
             # Forward Pass
-            out = self.model(batch.x.to(self.device), batch.edge_index.to(self.device))
+            out = self.model(batch.x.to(self.device), batch.edge_index.to(self.device), batch.batch.to(self.device))
             # Find the Loss
             train_loss = self.criterion(out.to(self.device), batch.y.to(self.device))
             epoch_train_loss.append(train_loss.item())    
@@ -63,7 +63,7 @@ class GraphClassificationPipeline(AbstractTrainingPipeline):
         
         for batch in val_data:
             with torch.no_grad():
-                out = self.model(batch.x.to(self.device), batch.edge_index.to(self.device))
+                out = self.model(batch.x.to(self.device), batch.edge_index.to(self.device), batch.batch.to(self.device))
                 val_loss = self.criterion(out.to(self.device), batch.y.to(self.device))
                 epoch_val_loss.append(val_loss.item())
                 _, pred = torch.max(out.data.to(self.device), 1)

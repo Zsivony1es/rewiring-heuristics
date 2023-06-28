@@ -47,7 +47,7 @@ class TrainValTestSplitter:
         Splitting method that is used for single graph datasets where node classification is the task. (e.g. Planetoid)
         """
         log.debug(f"Proceeding with single graph splitting method")
-
+        print(dset[0])
         num_nodes = dset.y.shape[0]
 
         train_mask, val_mask = train_test_split(np.arange(num_nodes), test_size=val_size, shuffle=True)
