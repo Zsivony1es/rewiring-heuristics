@@ -149,7 +149,6 @@ You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots rem
         else:
             data = Data(x=x, y=y, edge_index=edge_index, is_directed=G.is_directed())
 
-
         return data
 
     @Utils.deprecated("We are trying to use the default PyG implementation")
