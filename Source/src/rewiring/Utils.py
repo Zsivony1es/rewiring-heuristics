@@ -1,9 +1,21 @@
 import logging
 import shutil
-
+import warnings
 
 log = logging.getLogger(__name__)
 class Utils:
+
+    def deprecated(message):
+        def deprecated_decorator(func):
+            def deprecated_func(*args, **kwargs):
+                warnings.warn("{} is a deprecated function. {}".format(func.__name__, message),
+                                category=DeprecationWarning,
+                                stacklevel=2)
+                warnings.simplefilter('default', DeprecationWarning)
+                return func(*args, **kwargs)
+            return deprecated_func
+        return deprecated_decorator
+
     def get_rewiring_full_name(abbr: str) -> str:
         log.debug(f'Getting full name for {abbr}')
         rew_names = ['AddRandomEdges', 'ReduceDiameter', 'GraphDiffusionConvolution', 'None']

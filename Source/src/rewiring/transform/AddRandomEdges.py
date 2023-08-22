@@ -1,6 +1,7 @@
 from torch_geometric.data import Data, HeteroData
 from torch_geometric.transforms import BaseTransform
 from torch_geometric.utils import is_undirected, from_networkx, to_networkx
+from Utils import Utils
 
 import numpy as np
 import networkx as nx
@@ -9,6 +10,7 @@ import random
 from typing import Union
 from math import ceil
 import logging
+
 
 log = logging.getLogger(__name__)
 class AddRandomEdges(BaseTransform):
@@ -52,21 +54,23 @@ class AddRandomEdges(BaseTransform):
 
         G = to_networkx(data)
         
-        nodes = list(G.nodes)
-        existing_edges = set(G.edges)
-        num_nodes = len(nodes)
-        num_edges = len(existing_edges)
+        num_nodes = len(list(G.nodes))
+        num_edges = len(set(G.edges))
 
         if data.is_undirected:
             max_possible_edges = int((num_nodes * (num_nodes - 1)) / 2)
         else:
             max_possible_edges = int(num_nodes * (num_nodes - 1))
             
-        free_edge_spot_count = max_possible_edges - data.num_edges
+        free_edge_spot_count = max_possible_edges - num_edges
 
         # Calculate number of edges to add based on minimum density
-        if self._num_edges_add == None and self._min_density != None:
-            num_edges_add = int(ceil(self._min_density * max_possible_edges) - data.num_edges)
+        assert self._num_edges_add ^ self._min_density, "Only set the exact number of edges to add, or the minimum density!"
+            
+        if self._num_edges_add is None and self._min_density is not None:
+            num_edges_add = int(ceil(self._min_density * max_possible_edges) - num_edges)
+        else:
+            num_edges_add = self._num_edges_add
 
         # Return if no edges should be added
         if num_edges_add < 1:
@@ -79,21 +83,12 @@ You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots rem
         
         new_num_edges = num_edges + num_edges_add
         
-        if new_num_edges / max_possible_edges > 0.1:
-            # If the graph is dense enough, then randomly sampling edges won't be as successful
-            # So I compute the complement graph and add the new edges from that.
-            G_c = nx.complement(G)
-            new_edges = random.sample(list(G_c.edges), num_edges_add)
-            for u, v in new_edges:
-                G.add_edge(u, v)
-        else:
-            while len(existing_edges) < new_num_edges:
-                node1, node2 = random.sample(nodes, 2)
-                if (node1, node2) not in existing_edges and (node2, node1) not in existing_edges:
-                    G.add_edge(node1, node2)
-                    existing_edges.add((node1, node2))
+        G_c = nx.complement(G)
+        new_edges = random.sample(list(G_c.edges), num_edges_add)
+        for u, v in new_edges:
+            G.add_edge(u, v)
 
-        assert G.number_of_edges() == new_num_edges
+        assert G.number_of_edges() == new_num_edges, f"Something went wrong during the addition of edges! G_edgecount = {G.number_of_edges()}; new_num_edges = {new_num_edges}"
         
         data = from_networkx(G)
         data.y = labels
@@ -103,6 +98,7 @@ You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots rem
         
         return data
     
+    @Utils.deprecated("We are trying to use the default PyG implementation")
     def _from_networkx(self, G) -> Data:
         """Converts a NetworkX graph into a :obj:`torch_geometric.data.data.Data` object."""
 
@@ -156,6 +152,7 @@ You want to add {num_edges_add} edges, but only {free_edge_spot_count} spots rem
 
         return data
 
+    @Utils.deprecated("We are trying to use the default PyG implementation")
     def _to_networkx(self, data: Data) -> Union[nx.Graph, nx.MultiGraph, nx.DiGraph, nx.MultiDiGraph]:
         """Converts a :obj:`torch_geometric.data.data.Data` object into a NetworkX graph."""
 
