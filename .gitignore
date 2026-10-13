@@ -3,9 +3,10 @@
 /Source/res/datasets/LRGB
 /Source/res/datasets/Planetoid
 /Source/res/datasets/TUDataset
+/Source/res/datasets/synthetic
 /Source/out/plots/*
-/.vscode
-/.DS_Store
+.vscode/
+**/.DS_Store
 /.pytest_cache
 /.conda
 **/__pycache__

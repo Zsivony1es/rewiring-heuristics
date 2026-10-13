@@ -14,6 +14,12 @@ Required libraries:
 + <a href="https://pytorch-geometric.readthedocs.io/en/latest/">PyTorch Geometric</a>
 + <a href="https://networkx.org/">NetworkX</a>
 
+The synthetic dataset is not stored in this repository. Generate it before using the `synthetic` dataset option:
+```bash
+python Source/src/GenerateSparseDatasetFilesApp.py
+```
+This writes `Source/res/datasets/synthetic/raw_dset_list.pt`; the processed files are created on first load. The other datasets (Cora, CiteSeer, ENZYMES, PROTEINS, MUTAG, LRGB-PascalVOC) are downloaded automatically by PyTorch Geometric.
+
 To run it, just simply execute `Source/src/main.py` with the required arguments, which are:
 | Argument tag  | Required | Possible Values | Description |
 |---|---|---|---|
